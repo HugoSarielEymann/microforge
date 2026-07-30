@@ -5,5 +5,12 @@
     "reason": "Ne propose pas IsSlug ; toute nouvelle integration doit partir de 1.1.0.",
     "replacement": null,
     "declaredUtc": "2026-07-25T13:02:21.9809122Z"
+  },
+  {
+    "packageId": "Micro.Text.UrlSanitizer",
+    "versionSpec": "\u003C1.1.0",
+    "reason": "Ne masque pas les identifiants d URL (user:motdepasse@hote) : un mot de passe pouvait fuir dans les journaux.",
+    "replacement": "Micro.Text.UrlSanitizer",
+    "declaredUtc": "2026-07-30T23:08:23.4278719Z"
   }
 ]
