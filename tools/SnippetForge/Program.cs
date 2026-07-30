@@ -1,5 +1,6 @@
 using System.Text;
 using SnippetForge.Commands;
+using SnippetForge.Telemetry;
 
 namespace SnippetForge;
 
@@ -33,6 +34,23 @@ public static class Program
             }
 
             var root = ForgeRoot.Locate();
+            var exitCode = await DispatchAsync(root, args).ConfigureAwait(false);
+
+            // Le journal alimente « forge bench » : la preuve que le workflow est suivi
+            // se lit dans la trace des invocations, pas dans le code produit.
+            UsageLog.Append(root, args[0], args.Skip(1).ToArray(), exitCode);
+            return exitCode;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            return Cli.Fail(ex.Message);
+        }
+    }
+
+    private static async Task<int> DispatchAsync(ForgeRoot root, string[] args)
+    {
+        try
+        {
             return args[0] switch
             {
                 "search" => await QueryCommands.SearchAsync(root, args).ConfigureAwait(false),
@@ -56,6 +74,8 @@ public static class Program
                 "verify" => IntegrityCommands.Verify(root, args),
                 "remote" => RemoteCommands.Remote(root, args),
                 "push" => RemoteCommands.Push(root, args),
+                "pull" => await RemoteCommands.PullAsync(root, args).ConfigureAwait(false),
+                "bench" => BenchCommands.Bench(root, args),
                 "init" => ConsumerCommands.Init(root, args),
                 "outdated" => ConsumerCommands.Outdated(root, args),
                 "update" => ConsumerCommands.Update(root, args),
@@ -164,6 +184,15 @@ public static class Program
           remote [--source <url>] [--api-key-var <VAR>]
                                        Configure ou affiche le dépôt NuGet d'équipe.
           push <Id> [--version <v>]    Pousse une version déjà publiée localement.
+          pull [<Id>] [--version <v>]  Rapatrie depuis le dépôt d'équipe (tout, pour
+                                       un dossier partagé ; par package, en HTTP).
+
+        MESURER UNE MANCHE DE TEST IA
+          bench start <nom> [--project <dossier>] [--prompt "…"]
+                                       Capture l'état avant de lancer l'agent.
+          bench report <nom>           Mesure ce qui a changé : lignes, réutilisation,
+                                       packages forgés, trace des commandes forge.
+          bench list                   Manches capturées.
 
         Workflow IA : AGENT.md — Règles immuables : RULES.md
         """);

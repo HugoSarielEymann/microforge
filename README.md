@@ -178,23 +178,49 @@ montées délibérées.
 En solo, le feed local suffit. À plusieurs, l'effet cumulatif change de nature : c'est
 le nombre de projets qui réutilisent une brique qui fait la rentabilité.
 
+Le modèle est celui d'un clone Git — chaque poste travaille sur **sa copie locale**
+(rapide, hors ligne), et se synchronise avec un point de partage :
+
+- **Les sources** des micropackages (`packages/`) se partagent par Git : ce dépôt
+  est la source de vérité, chaque poste reconstruit son feed via `setup.ps1`.
+- **Les artefacts** se partagent par un dépôt NuGet d'équipe :
+
 ```powershell
-forge remote --source https://nuget.interne/v3/index.json
+forge remote --source https://nuget.interne/v3/index.json   # ou un dossier partagé
 $env:MICROFORGE_API_KEY = "<votre clé>"
-forge push Micro.Flow.Retry
+forge push Micro.Flow.Retry          # publier vers l'équipe (après validation locale)
+forge pull Micro.Text.Slugify        # rapatrier ce que l'équipe a forgé
 ```
 
 N'importe quel serveur NuGet v3 convient — [BaGet](https://github.com/loic-sharma/BaGet)
 est le plus simple à héberger, Azure Artifacts et GitHub Packages fonctionnent aussi.
-La clé d'API n'est **jamais** écrite sur disque : seul le nom de la variable
-d'environnement qui la porte est enregistré, et elle est masquée dans toutes les
-sorties.
+Un simple **dossier partagé** (UNC) marche également, et `forge pull` y rapatrie tout
+d'un coup. La clé d'API n'est **jamais** écrite sur disque, et un artefact déjà
+présent localement n'est jamais réécrit (immutabilité).
 
 L'ordre est délibéré : un package est validé, testé et publié **localement** d'abord,
 puis poussé. Le dépôt partagé ne reçoit que des artefacts déjà éprouvés.
 
-Côté consommateurs, il suffit alors de pointer `nuget.config` vers le dépôt d'équipe
-plutôt que vers le feed local.
+## Mesurer une manche de test IA
+
+```powershell
+forge bench start manche4 --project . --prompt "« votre demande »"
+# … faire travailler l'agent …
+forge bench report manche4
+```
+
+Le rapport mesure ce que l'agent a produit (fichiers, lignes nettes), réutilisé
+(packages installés), forgé (packages publiés), et surtout la **trace des commandes
+forge invoquées** pendant la manche — la preuve directe que le workflow est suivi.
+Protocole complet : [TESTING.md](TESTING.md).
+
+## La méthode, au-delà de .NET
+
+[SPEC.md](SPEC.md) spécifie la méthode indépendamment du langage (MUST/SHOULD/MAY) :
+micropackages purs et testés, artefacts immuables, contrat public dictant le SemVer,
+anti-duplication à deux signaux, workflow d'agent opposable. Ce dépôt en est
+l'implémentation de référence pour .NET/NuGet ; des implémentations indépendantes
+pour npm, PyPI ou Cargo sont possibles et bienvenues.
 
 ## Licence et attribution
 

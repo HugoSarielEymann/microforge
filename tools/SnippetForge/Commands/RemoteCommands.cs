@@ -39,6 +39,70 @@ public static class RemoteCommands
     }
 
     /// <summary>
+    /// Rapatrie des artefacts du dépôt d'équipe vers le feed local, puis régénère
+    /// l'index. Le pendant de push : le poste local se synchronise comme on clone.
+    /// </summary>
+    public static async Task<int> PullAsync(ForgeRoot root, string[] args)
+    {
+        var config = RemoteFeed.Load(root);
+        if (config is null)
+        {
+            return Cli.Fail("Aucun dépôt distant configuré. Lancez « forge remote --source <url> ».");
+        }
+
+        var packageId = Cli.Arg(args, 1);
+        PullResult result;
+
+        if (FeedMirror.IsFolderSource(config.Source))
+        {
+            // Dossier partagé : on peut tout rapatrier d'un coup.
+            result = FeedMirror.PullFromFolder(root, config.Source, packageId);
+        }
+        else
+        {
+            if (packageId is null)
+            {
+                return Cli.Fail(
+                    "Sur un dépôt HTTP, préciser le package : forge pull <PackageId> [--version <v>]. " +
+                    "(Le protocole NuGet v3 n'expose pas d'inventaire complet fiable.)");
+            }
+
+            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
+            result = await FeedMirror.PullFromHttpAsync(
+                root, config.Source, packageId, Cli.Option(args, "--version"), http).ConfigureAwait(false);
+        }
+
+        foreach (var name in result.Downloaded)
+        {
+            Console.WriteLine($"  + {name}");
+        }
+
+        foreach (var name in result.AlreadyPresent)
+        {
+            Console.WriteLine($"  = {name} (déjà présent, artefacts immuables : jamais réécrit)");
+        }
+
+        if (result.Downloaded.Count > 0)
+        {
+            var index = FeedIndexer.Rebuild(root);
+            var surfaces = FeedIndexer.RebuildApiSurfaces(root, index);
+            Console.WriteLine();
+            Console.WriteLine($"{result.Downloaded.Count} artefact(s) rapatrié(s). Index régénéré, " +
+                              $"{surfaces.Extracted} contrat(s) extrait(s).");
+            foreach (var warning in surfaces.Warnings)
+            {
+                Console.WriteLine($"  AVERTISSEMENT : {warning}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Rien à rapatrier : le feed local est à jour.");
+        }
+
+        return 0;
+    }
+
+    /// <summary>
     /// Pousse vers le dépôt d'équipe une version déjà publiée localement.
     /// </summary>
     public static int Push(ForgeRoot root, string[] args)

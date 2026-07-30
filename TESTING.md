@@ -90,6 +90,31 @@ révèle le gain, et le seul chiffre qui vaut est l'écart entre manche 1 et man
 forge stats
 ```
 
+## Encadrer une manche avec `forge bench`
+
+Depuis la 0.2.0, le comptage manuel n'est plus nécessaire. Le déroulé d'une manche :
+
+```powershell
+# 1. Préparer le projet neuf, le raccorder, puis capturer l'état initial
+forge init .
+forge bench start manche4 --project . --prompt "« le prompt exact de la manche »"
+
+# 2. Donner le prompt à l'agent (Copilot, Claude Code…) et le laisser travailler.
+#    C'est la seule étape humaine : on ne pilote pas un agent d'éditeur par API,
+#    et c'est voulu — un agent non instrumenté est un agent non biaisé.
+
+# 3. Mesurer
+forge bench report manche4
+```
+
+Le rapport donne : fichiers créés/modifiés et lignes C# nettes, micropackages
+installés pendant la manche, micropackages forgés, la **trace des commandes forge**
+que l'agent a réellement invoquées (tirée du journal `registry/usage.log`), et le
+verdict « a cherché avant d'écrire » ou non.
+
+C'est ce dernier point qui remplace la lecture manuelle des logs de l'éditeur : la
+preuve du workflow est dans la trace d'invocations, pas dans le code produit.
+
 ### Manche 4 — déclencher la création de packages
 
 Les manches 1 à 3 n'exercent que la moitié « réutiliser » du workflow. Cette manche

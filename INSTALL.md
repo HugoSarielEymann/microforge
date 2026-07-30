@@ -133,6 +133,10 @@ Forcer le repli (utile en CI) : ajouter `--offline` aux commandes `search`,
 | `registry\index.json`, `registry\api\`, `registry\embeddings.json` | Jamais à la main — dérivés, régénérés par `forge index` |
 | `registry\deprecations.json` | Via `forge deprecate` / `undeprecate` uniquement. **Non régénérable : à sauvegarder.** |
 | `registry\consumers.json` | Écrit par `forge init` ; sert aux métriques. Se reconstitue en relançant `forge init` dans chaque projet. |
+| `registry\usage.log` | Journal des invocations (alimente `forge bench`). Purgeable sans risque. |
+| `registry\artifacts.json` | Empreintes des artefacts (`forge verify`). Se reconstitue par `forge verify --adopt`. |
+| `registry\bench\` | Manches de test capturées (`forge bench`). |
+| `registry\remote.json` | Dépôt d'équipe (`forge remote`). Jamais de clé d'API dedans. |
 
 ### Où voir les packages créés
 
