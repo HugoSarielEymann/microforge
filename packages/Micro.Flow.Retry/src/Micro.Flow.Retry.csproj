@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Micro.Flow.Retry</PackageId>
+    <Version>1.0.1</Version>
+    <Description>Exécute une opération asynchrone avec relances configurables : nombre de tentatives, backoff exponentiel, prédicat de relance par exception, stratégie de délai injectable et journalisation via ILogger.</Description>
+    <PackageTags>retry;resilience;flow;async;backoff;transient;generic</PackageTags>
+    <Authors>MicroForge</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+</Project>

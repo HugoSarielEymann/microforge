@@ -1,0 +1,9 @@
+[
+  {
+    "packageId": "Micro.Text.Slugify",
+    "versionSpec": "\u003C1.1.0",
+    "reason": "Ne propose pas IsSlug ; toute nouvelle integration doit partir de 1.1.0.",
+    "replacement": null,
+    "declaredUtc": "2026-07-25T13:02:21.9809122Z"
+  }
+]

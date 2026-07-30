@@ -1,0 +1,66 @@
+name: MicroForge
+
+# Vérifie que l'outil et l'intégralité de la bibliothèque restent conformes.
+# Le contrôle décisif est le dernier : chaque micropackage doit repasser le
+# validateur, y compris ceux publiés il y a longtemps. Une règle durcie dans
+# RULES.md invalide alors visiblement les packages qui ne la respectent plus.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compiler le CLI
+        run: dotnet build tools/SnippetForge -c Release --nologo
+
+      - name: Tester le CLI
+        run: dotnet test tools/SnippetForge.Tests -c Release --nologo --logger "console;verbosity=normal"
+
+      - name: Tester chaque micropackage
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in packages/*/; do
+            [ -d "${package}tests" ] || continue
+            echo "::group::$(basename "$package")"
+            dotnet test "${package}tests" -c Release --nologo
+            echo "::endgroup::"
+          done
+
+      - name: Valider chaque micropackage contre RULES.md
+        shell: bash
+        env:
+          MICROFORGE_ROOT: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          forge="dotnet tools/SnippetForge/bin/Release/net8.0/SnippetForge.dll"
+          failed=0
+          for package in packages/*/; do
+            id=$(basename "$package")
+            [ -d "${package}src" ] || continue
+            # --skip-tests : ils viennent d'être exécutés à l'étape précédente.
+            # --offline : pas de modèle d'embedding sur un agent CI.
+            if ! $forge validate "$id" --skip-tests --offline; then
+              failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Signaler les quasi-doublons
+        shell: bash
+        env:
+          MICROFORGE_ROOT: ${{ github.workspace }}
+        continue-on-error: true
+        run: dotnet tools/SnippetForge/bin/Release/net8.0/SnippetForge.dll duplicates --offline

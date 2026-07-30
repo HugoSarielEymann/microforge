@@ -1,0 +1,21 @@
+# Artefacts de build
+bin/
+obj/
+.artifacts/
+
+# Le feed contient des binaires reconstructibles : setup.ps1 republie chaque
+# micropackage depuis packages/. Pour partager de vrais artefacts entre machines,
+# utiliser « forge remote » plutôt que le dépôt Git.
+feed/*
+!feed/.gitkeep
+
+# Le registre est entièrement dérivé du feed…
+registry/*
+!registry/.gitkeep
+
+# …à une exception près : deprecations.json porte des décisions humaines qu'aucun
+# artefact ne contient, et que « forge index » ne saurait pas reconstruire (R13).
+!registry/deprecations.json
+
+# consumers.json et remote.json référencent des chemins et des réglages propres au
+# poste ; embeddings.json et artifacts.json se recalculent.
