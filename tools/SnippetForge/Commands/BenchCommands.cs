@@ -1,4 +1,5 @@
 using SnippetForge.Bench;
+using SnippetForge.Consumers;
 
 namespace SnippetForge.Commands;
 
@@ -23,9 +24,24 @@ public static class BenchCommands
         var project = Cli.Option(args, "--project") ?? Directory.GetCurrentDirectory();
         var prompt = Cli.Option(args, "--prompt");
 
-        if (BenchSession.Load(root, name) is not null && !Cli.Flag(args, "--force"))
+        var force = Cli.Flag(args, "--force");
+
+        if (BenchSession.Load(root, name) is not null && !force)
         {
             return Cli.Fail($"La manche « {name} » existe déjà. Choisir un autre nom, ou --force pour recapturer.");
+        }
+
+        // La capture empreint chaque fichier : sur un dossier parent, elle ne termine pas.
+        if (!force && Directory.Exists(project))
+        {
+            var shape = ProjectShapeAnalyzer.Analyze(project);
+            if (shape.Warning is { } warning)
+            {
+                return Cli.Fail(
+                    $"Cible suspecte : {warning}\n" +
+                    "Une manche se mesure sur UN projet. Placez-vous dans le projet de test " +
+                    "(cd <projet>), ou passez --force en connaissance de cause.");
+            }
         }
 
         var snapshot = BenchSession.Capture(root, name, project, prompt);

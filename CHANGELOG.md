@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.2.1] — 2026-07-31
+
+### Corrigé
+
+- `forge init` et `forge bench start` refusent désormais un **dossier parent**
+  (plus de 3 projets ou 5 000 fichiers) : lancés sur `source\repos`, ils déposaient
+  des instructions valables pour des dizaines de dépôts sans rapport et tentaient
+  d'empreindre 133 000 fichiers. `--force` reste possible en connaissance de cause.
+
 ## [0.2.0] — 2026-07-31
 
 ### Ajouté

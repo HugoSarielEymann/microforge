@@ -26,6 +26,20 @@ public static class ConsumerCommands
         var withNuGetConfig = !Cli.Flag(args, "--no-nuget-config");
         var withInstructions = !Cli.Flag(args, "--no-agent-instructions");
 
+        // Raccorder un dossier parent déposerait des instructions valables pour des
+        // dizaines de dépôts sans rapport, et fausserait le décompte des consommateurs.
+        if (withNuGetConfig && !Cli.Flag(args, "--force"))
+        {
+            var shape = ProjectShapeAnalyzer.Analyze(target);
+            if (shape.Warning is { } warning)
+            {
+                return Cli.Fail(
+                    $"Cible suspecte : {warning}\n" +
+                    "Raccordez chaque projet individuellement (cd <projet> puis forge init .), " +
+                    "ou passez --force si c'est bien voulu.");
+            }
+        }
+
         if (!withNuGetConfig && !withInstructions)
         {
             return Cli.Fail("Les deux volets sont désactivés : il n'y a rien à faire.");
