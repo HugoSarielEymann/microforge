@@ -1,0 +1,8 @@
+{
+  "//": "Accorde le poste de développement et la CI. « latestMajor » utilise le SDK le plus récent installé (10.x en local, 8.x ou 9.x sur un agent CI) tout en garantissant un plancher. Sans ce fichier, un écart de SDK produit des différences d'analyse invisibles en local.",
+  "sdk": {
+    "version": "8.0.100",
+    "rollForward": "latestMajor",
+    "allowPrerelease": false
+  }
+}

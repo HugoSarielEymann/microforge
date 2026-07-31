@@ -18,33 +18,52 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Deux SDK : le 8 fournit le pack de ciblage net8.0, le 9 sert de secours si
+      # une règle d'analyse diffère entre versions. global.json arbitre lequel est
+      # réellement utilisé, et garantit que CI et poste de développement s'accordent.
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: |
+            8.0.x
+            9.0.x
 
+      # Premier réflexe en cas d'échec : savoir sur quoi on tourne réellement.
+      - name: Environnement
+        run: |
+          dotnet --info
+          echo "--- SDK installés ---"
+          dotnet --list-sdks
+
+      # --verbosity normal : sans cela, un échec de compilation ne montre pas la
+      # ligne fautive dans le journal de la CI.
       - name: Compiler le CLI
-        run: dotnet build tools/SnippetForge -c Release --nologo
+        run: dotnet build tools/SnippetForge -c Release --nologo --verbosity normal
 
       - name: Tester le CLI
-        run: dotnet test tools/SnippetForge.Tests -c Release --nologo --logger "console;verbosity=normal"
+        run: dotnet test tools/SnippetForge.Tests -c Release --nologo --verbosity normal
 
       - name: Tester chaque micropackage
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
           for package in packages/*/; do
             [ -d "${package}tests" ] || continue
             echo "::group::$(basename "$package")"
-            dotnet test "${package}tests" -c Release --nologo
+            if ! dotnet test "${package}tests" -c Release --nologo --verbosity normal; then
+              echo "::error::Tests en échec pour $(basename "$package")"
+              failed=1
+            fi
             echo "::endgroup::"
           done
+          exit $failed
 
       - name: Valider chaque micropackage contre RULES.md
         shell: bash
         env:
           MICROFORGE_ROOT: ${{ github.workspace }}
         run: |
-          set -euo pipefail
+          set -uo pipefail
           forge="dotnet tools/SnippetForge/bin/Release/net8.0/SnippetForge.dll"
           failed=0
           for package in packages/*/; do
@@ -53,6 +72,7 @@ jobs:
             # --skip-tests : ils viennent d'être exécutés à l'étape précédente.
             # --offline : pas de modèle d'embedding sur un agent CI.
             if ! $forge validate "$id" --skip-tests --offline; then
+              echo "::error::$id ne respecte plus RULES.md"
               failed=1
             fi
           done
