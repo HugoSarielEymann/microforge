@@ -31,12 +31,15 @@ public sealed class CompactDurationParserTests
 
     // --- Cas limites / erreurs ---
 
+    [Trait("hazard", "null-input")]
     [Fact]
     public void Parse_ChaineNull_LeveArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => CompactDurationParser.Parse(null!));
     }
 
+    [Trait("hazard", "empty-input")]
+    [Trait("hazard", "malformed-input")]
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -77,6 +80,7 @@ public sealed class CompactDurationParserTests
     // TryParse propageait OverflowException depuis int.Parse : un appelant qui se fiait
     // à la signature plantait. Un TryXxx ne lève jamais, quelle que soit l'entrée.
 
+    [Trait("hazard", "numeric-overflow")]
     [Theory]
     [InlineData("99999999999h")]
     [InlineData("99999999999m")]

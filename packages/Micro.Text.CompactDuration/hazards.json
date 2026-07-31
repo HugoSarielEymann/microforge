@@ -1,0 +1,8 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-input",
+    "numeric-overflow",
+    "malformed-input"
+  ]
+}

@@ -49,7 +49,14 @@ public static class Cli
         return 1;
     }
 
-    /// <summary>Exécute un processus et capture sa sortie combinée.</summary>
+    /// <summary>
+    /// Exécute un processus et capture sa sortie combinée.
+    ///
+    /// Les deux flux sont lus **simultanément** : les lire l'un après l'autre expose
+    /// à un interblocage si le processus remplit le tampon du second pendant qu'on
+    /// attend la fin du premier — et, en pratique, à une sortie vide qui masque la
+    /// vraie cause de l'échec.
+    /// </summary>
     public static bool Run(string file, string arguments, string workingDir, out string output)
     {
         var info = new ProcessStartInfo(file, arguments)
@@ -60,8 +67,16 @@ public static class Cli
         };
 
         using var process = Process.Start(info)!;
-        output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        var standardError = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
+
+        var combined = string.Concat(standardOutput.GetAwaiter().GetResult(), standardError.GetAwaiter().GetResult());
+        output = string.IsNullOrWhiteSpace(combined)
+            ? $"(aucune sortie ; code de sortie {process.ExitCode})"
+            : combined;
+
         return process.ExitCode == 0;
     }
 

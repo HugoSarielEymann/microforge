@@ -2,6 +2,30 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.4.0] — 2026-07-31
+
+### Ajouté
+
+- **Bibliothèque d'aléas de test** (`forge hazards`). Un aléa est une classe d'entrées
+  dangereuses — `null-input`, `numeric-overflow`, `secret-leak`, `unicode-edge`… —
+  éprouvée une fois et réutilisable partout. Douze aléas livrés d'origine ; le
+  catalogue s'enrichit par `forge hazards add` et se versionne avec le dépôt.
+
+  Un package déclare ses aléas (`forge hazards declare`) et doit les **prouver** par
+  des tests portant `[Trait("hazard", "<id>")]` — sinon `forge validate` refuse la
+  publication. C'est ce qui rend l'obligation mécanique plutôt que déclarative.
+
+  `forge review` signale en outre les aléas éprouvés mais non déclarés : le corpus en
+  sait parfois plus que ses métadonnées.
+- **SERVER.md** : héberger un dépôt d'équipe, validé en conditions réelles (BaGet en
+  Docker, cycle push/pull complet, artefacts bit à bit identiques après rapatriement).
+
+### Corrigé
+
+- `Cli.Run` lisait les flux de sortie l'un après l'autre : un échec de sous-processus
+  pouvait être rapporté **sans aucun message**, masquant la cause réelle. Les deux
+  flux sont désormais lus simultanément, et le code de sortie est affiché à défaut.
+
 ## [0.3.0] — 2026-07-31
 
 ### Ajouté

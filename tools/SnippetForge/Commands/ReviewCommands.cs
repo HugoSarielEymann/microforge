@@ -1,4 +1,5 @@
 using SnippetForge.Api;
+using SnippetForge.Hazards;
 using SnippetForge.Quality;
 
 namespace SnippetForge.Commands;
@@ -51,6 +52,8 @@ public static class ReviewCommands
             }
         }
 
+        ReportHazards(root, package, testText);
+
         Console.WriteLine("---");
         Console.WriteLine("Ces remarques sont heuristiques : l'outil dirige l'attention, il ne tranche pas.");
         Console.WriteLine("Le validateur garantit que des tests existent et passent, jamais qu'ils couvrent");
@@ -60,6 +63,46 @@ public static class ReviewCommands
         Console.WriteLine("a écrit le code a déjà, par construction, testé ce à quoi il avait pensé.");
 
         return 0;
+    }
+
+    /// <summary>
+    /// Confronte les aléas déclarés au catalogue et aux tests, et signale ceux qui sont
+    /// éprouvés sans être déclarés — une déclaration à compléter, pas une faute.
+    /// </summary>
+    private static void ReportHazards(ForgeRoot root, PackageSource package, string testText)
+    {
+        var catalogue = HazardCatalogue.Load(root);
+        var declared = HazardDeclaration.Read(package.Directory);
+        var covered = HazardDeclaration.CoveredBy(testText);
+
+        Console.WriteLine("Aléas de test :");
+
+        if (declared.Count == 0 && covered.Count == 0)
+        {
+            Console.WriteLine("  Aucun aléa déclaré ni marqué. Les aléas pertinents pour cette capacité :");
+            Console.WriteLine($"    forge hazards list");
+            Console.WriteLine($"    forge hazards declare {package.Id} --hazards \"null-input;…\"");
+            Console.WriteLine();
+            return;
+        }
+
+        foreach (var gap in HazardDeclaration.Verify(declared, testText, catalogue))
+        {
+            Console.WriteLine($"  [ABSENCE ] {gap.HazardId} — {gap.Reason}");
+        }
+
+        foreach (var id in declared.Where(d => covered.Contains(d, StringComparer.OrdinalIgnoreCase)))
+        {
+            Console.WriteLine($"  [prouvé  ] {id}");
+        }
+
+        foreach (var id in HazardDeclaration.UndeclaredButTested(declared, testText))
+        {
+            var known = catalogue.Find(id) is not null ? string.Empty : " (inconnu du catalogue)";
+            Console.WriteLine($"  [à déclarer] {id} — éprouvé par un test mais absent de hazards.json{known}");
+        }
+
+        Console.WriteLine();
     }
 
     private static ApiSurface? ExtractSurface(PackageSource package, out string? error)

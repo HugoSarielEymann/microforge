@@ -62,6 +62,21 @@ Tout effet non déterministe est **injecté**, jamais ambiant. API bannies dans 
   autre ; la promesse « le package récupéré est celui qui a été prouvé » exige
   l'identité des deux builds.
 
+### R6 bis — Les aléas déclarés doivent être prouvés
+
+Un package peut déclarer, dans `hazards.json`, les classes d'entrées dangereuses que
+sa capacité expose (`null-input`, `numeric-overflow`, `secret-leak`…). Chaque aléa
+déclaré **doit** être porté par au moins un test marqué
+`[Trait("hazard", "<identifiant>")]`, sinon la publication échoue.
+
+Déclarer sans prouver serait pire que ne rien déclarer : cela ferait croire le cas
+couvert. Le catalogue des aléas (`hazards.json` à la racine) est versionné avec le
+dépôt — ce qu'un agent découvre une fois devient un acquis collectif, et toute
+capacité de même nature en hérite l'obligation.
+
+Le trait prouve l'intention, pas la profondeur : rien n'empêche de marquer un test
+vide. C'est le même niveau de confiance que le reste du système.
+
 ### Ce qu'un package du feed garantit
 
 Un `.nupkg` présent dans `feed/` a nécessairement franchi, dans cet ordre :

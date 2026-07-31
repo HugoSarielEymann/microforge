@@ -99,6 +99,7 @@ Variables d'environnement : `MICROFORGE_EMBED_MODEL`, `MICROFORGE_EMBED_ENDPOINT
 | `new <Id> --description … --tags …` | Scaffold conforme (src, tests, README) |
 | `validate <Id> [--skip-tests]` | Vérification des règles immuables |
 | `review <Id>` | Prépare la relecture : ce que le validateur ne peut pas juger |
+| `hazards [list\|add\|declare]` | Catalogue partagé des aléas de test, cumulatif |
 | `bump <Id> <major\|minor\|patch>` | Incrémente la version déclarée |
 | `publish <Id> [--allow-similar]` | Valide → teste → packe → vérifie contrat et doublon → publie |
 | `duplicates [--all]` | Quasi-doublons de la bibliothèque (`--all` : tous les scores) |

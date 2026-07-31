@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using SnippetForge.Hazards;
 using SnippetForge.Quality;
 
 namespace SnippetForge;
@@ -62,6 +63,7 @@ public static partial class Validator
         errors.AddRange(ReadmeQuality.Analyze(File.ReadAllText(readmePath), packageId));
         ValidateBannedApis(srcDir, errors);
         ValidateTests(testsDir, errors);
+        ValidateHazards(root, packageDir, testsDir, errors);
 
         if (errors.Count == 0 && !skipTests)
         {
@@ -152,6 +154,31 @@ public static partial class Validator
         if (!hasTestAttribute)
         {
             errors.Add("tests/ ne contient aucun [Fact] ou [Theory] : chaque micropackage doit prouver son comportement.");
+        }
+    }
+
+    /// <summary>
+    /// Un aléa déclaré doit être prouvé par un test marqué du trait correspondant.
+    /// La déclaration sans preuve serait pire que l'absence de déclaration : elle
+    /// laisserait croire le cas couvert.
+    /// </summary>
+    private static void ValidateHazards(ForgeRoot root, string packageDir, string testsDir, List<string> errors)
+    {
+        var declared = HazardDeclaration.Read(packageDir);
+        if (declared.Count == 0)
+        {
+            return;
+        }
+
+        var testSources = string.Join('\n', Directory
+            .EnumerateFiles(testsDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
+                        !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .Select(File.ReadAllText));
+
+        foreach (var gap in HazardDeclaration.Verify(declared, testSources, HazardCatalogue.Load(root)))
+        {
+            errors.Add($"Aléa « {gap.HazardId} » : {gap.Reason}");
         }
     }
 

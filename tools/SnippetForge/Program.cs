@@ -63,6 +63,7 @@ public static class Program
                 "new" => PackageCommands.New(root, args),
                 "validate" => PackageCommands.Validate(root, args),
                 "review" => ReviewCommands.Review(root, args),
+                "hazards" => HazardCommands.Hazards(root, args),
                 "bump" => PackageCommands.Bump(root, args),
                 "publish" => await PackageCommands.PublishAsync(root, args).ConfigureAwait(false),
 
@@ -152,6 +153,13 @@ public static class Program
           review <Id|chemin>           Prépare la relecture : confronte le contrat
                                        public aux tests, liste ce qui mérite un
                                        second regard. Ne tranche pas.
+          hazards [list] [--detail]    Catalogue partagé des aléas de test.
+          hazards add <id> --description "…" --rationale "…" [--examples "a;b"]
+                                       Consigne un aléa découvert : l'acquis devient
+                                       collectif et versionné.
+          hazards declare <Id> --hazards "a;b"
+                                       Déclare les aléas d'un package ; chacun devra
+                                       être prouvé par un test marqué du trait.
           bump <Id|chemin> <major|minor|patch>
                                        Incrémente la version déclarée.
           publish <Id|chemin> [--allow-similar] [--offline]
