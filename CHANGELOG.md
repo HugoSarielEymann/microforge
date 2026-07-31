@@ -2,6 +2,21 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.3.0] — 2026-07-31
+
+### Ajouté
+
+- **`forge review <Id>`** : compile le package, extrait son contrat public et le
+  confronte aux tests. Signale les membres publics jamais cités, les exceptions
+  documentées jamais provoquées, les méthodes `TryXxx` (qui ne doivent jamais lever)
+  et les signatures numériques sans test aux bornes.
+
+  Répond à la limite mesurée en manche 4 : le validateur garantit que des tests
+  existent et passent, jamais qu'ils couvrent les bons cas. La commande **ne tranche
+  pas** — elle rassemble les questions pour un relecteur, de préférence un agent
+  distinct de celui qui a forgé.
+- **ROADMAP.md** : ce qui bloque une release, ce qui est reporté, ce qui a été écarté.
+
 ## [0.2.1] — 2026-07-31
 
 ### Corrigé

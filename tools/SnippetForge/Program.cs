@@ -62,6 +62,7 @@ public static class Program
 
                 "new" => PackageCommands.New(root, args),
                 "validate" => PackageCommands.Validate(root, args),
+                "review" => ReviewCommands.Review(root, args),
                 "bump" => PackageCommands.Bump(root, args),
                 "publish" => await PackageCommands.PublishAsync(root, args).ConfigureAwait(false),
 
@@ -148,6 +149,9 @@ public static class Program
                                        Scaffolde un micropackage conforme.
           validate <Id|chemin> [--skip-tests]
                                        Vérifie les règles immuables de RULES.md.
+          review <Id|chemin>           Prépare la relecture : confronte le contrat
+                                       public aux tests, liste ce qui mérite un
+                                       second regard. Ne tranche pas.
           bump <Id|chemin> <major|minor|patch>
                                        Incrémente la version déclarée.
           publish <Id|chemin> [--allow-similar] [--offline]

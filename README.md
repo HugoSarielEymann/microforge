@@ -98,6 +98,7 @@ Variables d'environnement : `MICROFORGE_EMBED_MODEL`, `MICROFORGE_EMBED_ENDPOINT
 | `diff <Id> <v1> <v2>` | Différence de contrat public entre deux versions |
 | `new <Id> --description … --tags …` | Scaffold conforme (src, tests, README) |
 | `validate <Id> [--skip-tests]` | Vérification des règles immuables |
+| `review <Id>` | Prépare la relecture : ce que le validateur ne peut pas juger |
 | `bump <Id> <major\|minor\|patch>` | Incrémente la version déclarée |
 | `publish <Id> [--allow-similar]` | Valide → teste → packe → vérifie contrat et doublon → publie |
 | `duplicates [--all]` | Quasi-doublons de la bibliothèque (`--all` : tous les scores) |
