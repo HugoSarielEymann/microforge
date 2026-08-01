@@ -78,14 +78,43 @@ public sealed class ConsumerRegistryTests
         }
     }
 
+    /// <summary>
+    /// Racine absolue propre à la plateforme. Coder « C:\forge » en dur faisait échouer
+    /// ces cas sur Linux : l'antislash y est un caractère de nom de fichier légal, si
+    /// bien que « C:\forge\demo » désigne UN seul nom, pas un chemin de trois segments.
+    /// C'est ce qui a fait tomber la CI sur Ubuntu alors que tout passait sous Windows.
+    /// </summary>
+    private static string Absolute(params string[] segments) =>
+        Path.Combine([OperatingSystem.IsWindows() ? @"C:\" : "/", .. segments]);
+
     [Theory]
-    [InlineData(@"C:\forge", @"C:\forge\demo", true)]
-    [InlineData(@"C:\forge", @"C:\forge", true)]
-    [InlineData(@"C:\forge", @"C:\forge\a\b\c", true)]
-    [InlineData(@"C:\forge", @"C:\autre\projet", false)]
-    [InlineData(@"C:\forge", @"C:\forgerie", false)]
-    public void IsInside_DistingueLesSousDossiersDesHomonymes(string parent, string candidate, bool expected) =>
-        Assert.Equal(expected, ConsumerRegistry.IsInside(parent, candidate));
+    [InlineData(new[] { "forge" }, new[] { "forge", "demo" }, true)]
+    [InlineData(new[] { "forge" }, new[] { "forge" }, true)]
+    [InlineData(new[] { "forge" }, new[] { "forge", "a", "b", "c" }, true)]
+    [InlineData(new[] { "forge" }, new[] { "autre", "projet" }, false)]
+    [InlineData(new[] { "forge" }, new[] { "forgerie" }, false)]
+    public void IsInside_DistingueLesSousDossiersDesHomonymes(string[] parent, string[] candidate, bool expected) =>
+        Assert.Equal(expected, ConsumerRegistry.IsInside(Absolute(parent), Absolute(candidate)));
+
+    [Fact]
+    public void IsInside_ToleraLeSeparateurFinal()
+    {
+        var parent = Absolute("forge") + Path.DirectorySeparatorChar;
+
+        Assert.True(ConsumerRegistry.IsInside(parent, Absolute("forge", "demo")));
+    }
+
+    /// <summary>
+    /// Sur Linux, deux dossiers ne différant que par la casse sont distincts ; ailleurs
+    /// ils désignent le même. Le comportement attendu suit donc le système de fichiers.
+    /// </summary>
+    [Fact]
+    public void IsInside_SuitLaSensibiliteALaCasseDuSystemeDeFichiers()
+    {
+        var inside = ConsumerRegistry.IsInside(Absolute("forge"), Absolute("FORGE", "demo"));
+
+        Assert.Equal(!OperatingSystem.IsLinux(), inside);
+    }
 
     /// <summary>
     /// Régression : « forge init ~/.claude --no-nuget-config » enregistrait ce dossier

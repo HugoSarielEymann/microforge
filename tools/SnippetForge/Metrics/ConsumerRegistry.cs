@@ -81,18 +81,39 @@ public sealed class ConsumerRegistry
         return _entries.Where(e => !IsInside(root.Path, e.Path)).ToList();
     }
 
-    /// <summary>Indique si <paramref name="candidate"/> est situé sous <paramref name="parent"/>.</summary>
+    /// <summary>
+    /// Sensibilité à la casse des chemins, selon le système de fichiers.
+    ///
+    /// Comparer sans tenir compte de la casse sur Linux est faux : <c>/a/Projet</c> et
+    /// <c>/a/projet</c> y sont deux dossiers distincts, et les confondre exclurait à
+    /// tort un consommateur du bilan. Windows et macOS sont insensibles par défaut.
+    /// </summary>
+    private static StringComparison PathComparison =>
+        OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+    /// <summary>
+    /// Indique si <paramref name="candidate"/> est situé sous <paramref name="parent"/>.
+    ///
+    /// Les deux chemins sont résolus par le système courant : cette comparaison n'a de
+    /// sens qu'entre chemins de la même machine, ce qui est le seul usage — le registre
+    /// des consommateurs est local et n'est jamais partagé.
+    /// </summary>
     public static bool IsInside(string parent, string candidate)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(parent);
         ArgumentException.ThrowIfNullOrWhiteSpace(candidate);
 
-        var normalizedParent = Path.GetFullPath(parent).TrimEnd(Path.DirectorySeparatorChar);
-        var normalizedCandidate = Path.GetFullPath(candidate).TrimEnd(Path.DirectorySeparatorChar);
+        var normalizedParent = Path.TrimEndingDirectorySeparator(Path.GetFullPath(parent));
+        var normalizedCandidate = Path.TrimEndingDirectorySeparator(Path.GetFullPath(candidate));
 
-        return normalizedCandidate.Equals(normalizedParent, StringComparison.OrdinalIgnoreCase) ||
-               normalizedCandidate.StartsWith(
-                   normalizedParent + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+        if (normalizedCandidate.Equals(normalizedParent, PathComparison))
+        {
+            return true;
+        }
+
+        // Le séparateur final est indispensable : sans lui, « /a/forgerie » passerait
+        // pour un sous-dossier de « /a/forge ».
+        return normalizedCandidate.StartsWith(normalizedParent + Path.DirectorySeparatorChar, PathComparison);
     }
 
     /// <summary>Écrit le registre sur disque.</summary>
