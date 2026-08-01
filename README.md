@@ -21,15 +21,15 @@ Quatre garanties mécaniques, appliquées par l'outil et non par la discipline :
 
 ```
 MicroForge/
-├── RULES.md                  Règles immuables (R1–R13), appliquées par le validateur
+├── RULES.md                  Règles immuables (R1–R13 + R6 bis), appliquées par le validateur
 ├── AGENT.md                  Workflow obligatoire pour les IA (6 étapes)
 ├── INSTALL.md                Guide d'installation et chemins à manipuler
 ├── TESTING.md                Protocole de test et lecture des métriques
 ├── CLAUDE.md                 Chargé par Claude Code → pointe vers AGENT.md
 ├── nuget.config              Rend le feed visible aux projets sous ce dossier
-├── forge.ps1                 CLI
+├── forge.ps1                 Lance le CLI depuis les sources (sans l'outil global)
 ├── setup.ps1                 Prépare la bibliothèque (aucun effet hors du dossier)
-├── install.ps1               Installe sur la machine (lanceur, source NuGet, CLAUDE.md)
+├── install.ps1               Installe sur la machine (outil, source NuGet, CLAUDE.md)
 ├── feed/                     Flux NuGet local : .nupkg publiés, IMMUABLES
 ├── registry/
 │   ├── index.json            Index de recherche          ─┐
@@ -41,21 +41,26 @@ MicroForge/
 │   └── Micro.<Domaine>.<Action>/{README.md, src/, tests/}
 ├── tools/
 │   ├── SnippetForge/         Le CLI
-│   └── SnippetForge.Tests/   199 tests — l'outil qui exige des tests en a
+│   └── SnippetForge.Tests/   390 tests — l'outil qui exige des tests en a
 └── demo/                     Projet consommateur d'exemple
 ```
 
-## Installation — deux commandes
+## Installation
 
 Guide complet, chemins exacts et désinstallation : **[INSTALL.md](INSTALL.md)**.
 
-```powershell
-# 1. Une fois par machine (lance setup.ps1 tout seul)
-cd C:\Users\hugoe\Documents\Widgets\MicroForge
-.\install.ps1 -WhatIf    # montre ce qui serait modifié
-.\install.ps1
+```bash
+# 1. L'outil, depuis nuget.org
+dotnet tool install --global MicroForge.Cli
 
-# 2. Une fois par projet, dans un nouveau terminal
+# 2. La bibliothèque : votre corpus
+git clone https://github.com/HugoSarielEymann/microforge.git
+cd microforge
+./setup.ps1                    # reconstruit feed, index et contrats
+forge use .                    # désigne cette bibliothèque
+./install.ps1                  # source NuGet machine + instructions IA globales
+
+# 3. Une fois par projet
 cd <votre projet>
 forge init .
 ```
@@ -111,8 +116,12 @@ Variables d'environnement : `MICROFORGE_EMBED_MODEL`, `MICROFORGE_EMBED_ENDPOINT
 | `doctor` | Diagnostic de l'installation et corrections à appliquer |
 | `remote --source <url>` | Configure le dépôt NuGet d'équipe |
 | `push <Id> [--version <v>]` | Pousse une version publiée vers le dépôt d'équipe |
+| `pull [<Id>]` | Rapatrie depuis le dépôt d'équipe |
 | `outdated <projet>` | Classe les références : sûres vs à relire |
 | `update <projet> [--safe-only] [--test "…"]` | Applique et restaure si vos tests échouent |
+| `verify [--adopt]` | Empreintes des artefacts : dépôt manuel, falsification, suppression |
+| `bench start\|report\|list` | Mesure une manche de test avec un agent IA |
+| `use [<chemin>]` / `--version` | Désigne la bibliothèque / version de l'outil |
 
 ## Le versionnage, façon Docker
 
@@ -238,9 +247,22 @@ MicroForge est distribué sous **[Apache-2.0](LICENSE)**. Concrètement :
 Ce que la licence **ne peut pas** faire : empêcher quelqu'un de réimplémenter l'idée
 depuis zéro sans vous citer. Une licence protège du code et du texte, pas un concept.
 
-## Packages d'exemple inclus
+## Le corpus livré
 
-- **Micro.Flow.Retry 1.0.0** — relances asynchrones : backoff exponentiel, prédicat
-  de relance, délai injectable (tests instantanés), logging `ILogger`.
-- **Micro.Text.Slugify 1.1.0** — slug URL pur et déterministe ; `1.0.0` est dépréciée
-  pour illustrer le mécanisme.
+Quatre micropackages, 72 tests. Ils ne sont **pas** publiés sur nuget.org — le corpus
+est propre à chaque organisation (voir [SERVER.md](SERVER.md)).
+
+| Package | Capacité |
+|---------|----------|
+| `Micro.Flow.Retry` | Relances asynchrones : backoff exponentiel, prédicat de relance, délai injectable, logging `ILogger` |
+| `Micro.Text.Slugify` | Slug URL pur et déterministe |
+| `Micro.Text.CompactDuration` | Parse `30s`, `5m`, `2h30m` en `TimeSpan` |
+| `Micro.Text.UrlSanitizer` | Masque secrets et identifiants dans une URL avant journalisation |
+
+Les deux derniers ont été **forgés par un agent IA** au cours d'un test du workflow :
+il a cherché, n'a rien trouvé, et les a créés avec tests et mode d'emploi. Chacun
+comportait un défaut sur un cas limite non testé — corrigés depuis, et c'est ce
+constat qui a donné naissance à `forge review` et au catalogue d'aléas.
+
+Une version de `Micro.Text.Slugify` et une de `Micro.Text.UrlSanitizer` sont
+dépréciées : les artefacts restent installables, l'alerte remonte aux consommateurs.

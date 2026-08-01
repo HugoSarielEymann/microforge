@@ -1,47 +1,112 @@
 # Installation de MicroForge
 
-**Deux commandes en tout** : une fois par machine, une fois par projet.
+Prérequis unique : **.NET SDK 8 ou supérieur** (`dotnet --list-sdks`).
 
-Prérequis : .NET SDK 8 ou supérieur (`dotnet --list-sdks`).
+Deux notions à distinguer avant de commencer :
+
+- **L'outil** (`forge`) s'installe depuis nuget.org, comme n'importe quel outil .NET.
+- **La bibliothèque** (le dossier `MicroForge/` avec ses `packages/`, son `feed/` et
+  son `registry/`) est *votre* corpus. L'outil doit savoir où elle se trouve.
+
+Ce sont deux choses séparées : plusieurs bibliothèques peuvent coexister, et l'outil
+en désigne une à la fois.
 
 ---
 
-## Étape 1 — Une fois par machine
+## PC neuf, installation complète
 
-```powershell
-cd C:\Users\hugoe\Documents\Widgets\MicroForge
-.\install.ps1 -WhatIf     # montre ce qui serait fait, sans rien modifier
-.\install.ps1             # applique
+### 1. Installer l'outil
+
+```bash
+dotnet tool install --global MicroForge.Cli
+forge --version
 ```
 
-L'installateur enchaîne tout seul quatre choses. Seules les trois dernières sortent
-du dossier MicroForge :
+Rien d'autre : ni PATH à modifier, ni script à lancer. Fonctionne à l'identique sur
+Windows, macOS et Linux.
 
-| # | Action | Fichier / réglage touché | Désactiver avec |
-|---|--------|--------------------------|-----------------|
-| 0 | Prépare la bibliothèque (`setup.ps1`) | rien hors de `MicroForge\` | `-SkipSetup` |
-| 1 | Lanceur `forge` | `C:\Users\hugoe\.local\bin\forge.cmd` + PATH utilisateur | `-SkipShim` |
-| 2 | Source NuGet globale | config NuGet utilisateur | `-SkipNuGetSource` |
-| 3 | Instructions IA globales | `C:\Users\hugoe\.claude\CLAUDE.md` | `-SkipGlobalAgent` |
+### 2. Récupérer la bibliothèque
 
-L'étape 0 compile le CLI, exécute ses 247 tests, publie les micropackages sources
-dans le feed et régénère index, contrats et vecteurs. L'étape 3 rend le réflexe
-automatique : le `CLAUDE.md` global est chargé par **toute** session Claude Code,
-quel que soit le projet.
+```bash
+git clone https://github.com/HugoSarielEymann/microforge.git
+cd microforge
+```
 
-`C:\Users\hugoe\.local\bin` est déjà sur votre PATH. **Ouvrir un nouveau terminal**
-ensuite, pour que `forge` soit reconnu.
+Le dépôt contient les **sources** des micropackages, pas les artefacts : `feed/` et
+`registry/` sont ignorés par Git parce qu'ils se reconstruisent.
+
+### 3. Reconstruire le feed local
+
+```powershell
+.\setup.ps1
+```
+
+Compile l'outil depuis les sources, exécute ses tests, publie chaque micropackage de
+`packages/` dans `feed/`, et régénère index, contrats publics et vecteurs. **N'écrit
+rien hors du dossier.**
+
+### 4. Désigner la bibliothèque
+
+```bash
+forge use <chemin absolu vers microforge>
+```
+
+Le chemin est mémorisé dans `~/.microforge/root` : `forge` fonctionne ensuite depuis
+n'importe quel dossier. C'est **la** configuration qui répond à « où sont stockés les
+micropackages ».
+
+### 5. Rendre la source NuGet et les instructions IA globales
+
+```powershell
+.\install.ps1 -WhatIf     # montre ce qui serait fait
+.\install.ps1
+```
+
+| Action | Fichier / réglage touché | Désactiver avec |
+|--------|--------------------------|-----------------|
+| Prépare la bibliothèque (`setup.ps1`) | rien hors du dossier | `-SkipSetup` |
+| Installe/actualise l'outil et mémorise la racine | outil global, `~/.microforge/root` | `-SkipTool` |
+| Source NuGet machine | config NuGet utilisateur | `-SkipNuGetSource` |
+| Instructions IA globales | `~/.claude/CLAUDE.md` | `-SkipGlobalAgent` |
+
+La dernière rend le réflexe automatique : ce `CLAUDE.md` est chargé par **toute**
+session Claude Code, quel que soit le projet ouvert.
 
 Vérification :
 
-```powershell
+```bash
+forge doctor
 forge list
-forge search "relancer un appel http qui echoue"
 ```
+
+`forge doctor` contrôle chaque point et indique quoi corriger. C'est le premier
+réflexe en cas de doute.
 
 ---
 
-## Étape 2 — Une fois par projet
+## Où sont stockés les micropackages
+
+Trois emplacements, trois rôles :
+
+| Quoi | Où | Configuré par |
+|------|-----|---------------|
+| **Sources** (`packages/<Id>/`) | dans la bibliothèque | l'emplacement du clone |
+| **Artefacts** (`feed/*.nupkg`) | dans la bibliothèque | reconstruits par `setup.ps1` |
+| **Quelle bibliothèque ?** | `~/.microforge/root` | `forge use <chemin>` |
+
+Trois moyens de désigner la bibliothèque, par ordre de priorité :
+
+1. La variable d'environnement `MICROFORGE_ROOT` (ponctuel, scripts, CI)
+2. La remontée de dossiers depuis le répertoire courant (quand on travaille dedans)
+3. Le chemin mémorisé par `forge use` (le cas courant)
+
+Pour qu'un **projet** puisse installer les packages, il lui faut la source NuGet :
+c'est `forge init .` qui l'écrit dans son `nuget.config`. Pour partager les artefacts
+entre plusieurs machines, voir [SERVER.md](SERVER.md).
+
+---
+
+## Une fois par projet
 
 Depuis le dossier du projet :
 
@@ -68,7 +133,7 @@ référence, surtout hors du dossier de travail.
 
 ---
 
-## Étape 3 — Rien à faire
+## Ensuite — rien à faire
 
 L'agent lit son fichier d'instructions, qui le renvoie vers
 [AGENT.md](AGENT.md) — le workflow complet et obligatoire. Il applique le cycle
@@ -158,8 +223,9 @@ pendant l'installation, le redémarrer.
 
 | Chemin | Écrit par | Rôle |
 |--------|-----------|------|
-| `C:\Users\hugoe\.local\bin\forge.cmd` | `install.ps1` | Lanceur global |
-| `C:\Users\hugoe\.claude\CLAUDE.md` | `install.ps1` | Réflexe MicroForge dans toute session IA |
+| `~\.microforge\root` | `forge use` | **Quelle bibliothèque l'outil utilise** |
+| outil global `MicroForge.Cli` | `dotnet tool install` | La commande `forge` |
+| `~\.claude\CLAUDE.md` | `install.ps1` | Réflexe MicroForge dans toute session IA |
 | config NuGet utilisateur | `install.ps1` | Source `MicroForge` visible partout |
 | `<projet>\nuget.config` | `forge init` | Source visible depuis ce projet |
 | `<projet>\CLAUDE.md` | `forge init` | Instructions pour Claude Code |
@@ -170,34 +236,44 @@ pendant l'installation, le redémarrer.
 
 ## Sauvegarde et migration
 
-À sauvegarder : `packages\` (les sources), `feed\` (les artefacts) et
-`registry\deprecations.json`. Tout le reste de `registry\` se régénère par
-`forge index`.
+À sauvegarder : `packages/` (les sources) et `registry/deprecations.json`. Le reste
+se régénère — `feed/` par `setup.ps1`, l'index et les contrats par `forge index`.
 
-Si vous déplacez le dossier MicroForge : relancer `.\install.ps1` puis `forge init .`
-dans chaque projet raccordé — les chemins sont corrigés automatiquement.
+Si vous déplacez le dossier : `forge use <nouveau chemin>`, puis `forge init .` dans
+chaque projet raccordé pour corriger le chemin de la source NuGet.
+
+---
+
+## Mettre à jour
+
+```bash
+dotnet tool update --global MicroForge.Cli   # l'outil
+git pull && .\setup.ps1                      # la bibliothèque
+```
 
 ---
 
 ## Désinstallation
 
-```powershell
-Remove-Item C:\Users\hugoe\.local\bin\forge.cmd
+```bash
+dotnet tool uninstall --global MicroForge.Cli
 dotnet nuget remove source MicroForge
 ```
 
-Puis retirer le bloc `<!-- microforge:begin -->…<!-- microforge:end -->` des
-`CLAUDE.md` concernés, et l'entrée `MicroForge` des `nuget.config` de projet. Les
-packages déjà installés continuent de fonctionner tant que le dossier `feed\` existe.
+Puis supprimer `~/.microforge/`, retirer le bloc
+`<!-- microforge:begin -->…<!-- microforge:end -->` des fichiers d'instructions, et
+l'entrée `MicroForge` des `nuget.config` de projet.
 
 ---
 
 ## Diagnostic
 
+`forge doctor` répond à la plupart des questions. Sinon :
+
 | Symptôme | Cause probable | Correction |
 |----------|----------------|------------|
 | `forge` : commande inconnue | Terminal ouvert avant l'installation | Ouvrir un nouveau terminal |
-| `Racine MicroForge introuvable` | Lancement hors du dossier sans lanceur | `$env:MICROFORGE_ROOT = "C:\...\MicroForge"` |
-| `dotnet add package` : introuvable | Source NuGet non déclarée | `forge init .` dans le projet |
+| `Racine MicroForge introuvable` | L'outil ne sait pas où est la bibliothèque | `forge use <chemin>` |
+| `dotnet add package` : introuvable | Source NuGet non déclarée dans le projet | `forge init .` |
 | `Contrat non extrait` | Dépendance non restaurée | `dotnet restore` puis `forge index` |
 | Doublons non détectés entre synonymes | Repli lexical actif | Installer `nomic-embed-text` (voir plus haut) |
