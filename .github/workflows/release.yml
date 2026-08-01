@@ -1,0 +1,109 @@
+name: Publier sur nuget.org
+
+# Publie MicroForge.Cli — l'OUTIL, et lui seul. Les micropackages ne vont jamais sur
+# nuget.org : leur espace de noms y serait mondial et définitif, alors que le corpus
+# est propre à chaque organisation. Ils vivent sur le feed local et, en équipe, sur un
+# dépôt privé (voir SERVER.md).
+#
+# Authentification par « Trusted Publishing » : GitHub échange un jeton OIDC de courte
+# durée contre une clé d'API temporaire. Aucun secret durable n'est stocké dans le
+# dépôt — rien à faire fuiter, rien à faire tourner.
+#
+# PRÉREQUIS, à faire une fois sur nuget.org (Compte → Trusted Publishing) :
+#   propriétaire du package .. votre compte
+#   identifiant ............. MicroForge.Cli
+#   dépôt ................... HugoSarielEymann/microforge
+#   workflow ................ release.yml
+# Pour un package jamais publié, la politique n'est valable qu'un temps limité :
+# créez-la juste avant de déclencher la première publication.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Tout vérifier et empaqueter, sans publier"
+        type: boolean
+        default: true
+
+permissions:
+  # Indispensable au jeton OIDC : sans cette permission, Trusted Publishing échoue.
+  id-token: write
+  contents: read
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      # La version publiée vient du .csproj, jamais du tag : le tag ne fait que
+      # déclencher. On vérifie qu'ils concordent, sinon on publierait autre chose
+      # que ce que l'étiquette annonce — et une version publiée est irrévocable.
+      - name: Vérifier que le tag correspond à la version du projet
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          set -euo pipefail
+          # sed plutôt que grep -P : les expressions Perl dépendent de la locale et
+          # de la variante de grep, ce qui rend l'étape fragile selon l'agent.
+          projet=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' \
+            tools/SnippetForge/SnippetForge.csproj | head -1)
+          tag="${GITHUB_REF_NAME#v}"
+          echo "csproj : $projet — tag : $tag"
+          if [ "$projet" != "$tag" ]; then
+            echo "::error::Le tag v$tag ne correspond pas à la version $projet du .csproj."
+            exit 1
+          fi
+
+      - name: Tester avant de publier
+        run: dotnet test tools/SnippetForge.Tests -c Release --nologo
+
+      - name: Empaqueter l'outil
+        run: dotnet pack tools/SnippetForge -c Release -o artifacts --nologo
+
+      - name: Inventaire de l'artefact
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -la artifacts/
+          # LICENSE et NOTICE doivent être dans le paquet : l'attribution est la seule
+          # obligation que la licence impose, elle ne doit pas se perdre à l'empaquetage.
+          unzip -l artifacts/*.nupkg | grep -E "LICENSE|NOTICE|README" \
+            || { echo "::error::LICENSE, NOTICE ou README absent du paquet"; exit 1; }
+
+      - name: Conserver l'artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: artifacts/*.nupkg
+
+      # Échange le jeton OIDC de GitHub contre une clé d'API nuget.org temporaire.
+      - name: Authentification nuget.org
+        if: github.event_name == 'push' || inputs.dry-run == false
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publier
+        if: github.event_name == 'push' || inputs.dry-run == false
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+
+      - name: Rappel
+        if: github.event_name == 'workflow_dispatch' && inputs.dry-run
+        run: |
+          echo "Simulation : l'artefact est vérifié et conservé, rien n'a été publié."
+          echo "Pour publier : poser un tag vX.Y.Z, ou relancer avec dry-run décoché."
