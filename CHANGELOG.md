@@ -90,3 +90,23 @@ digests, incrément SemVer vérifié, anti-duplication par description (Ollama o
 lexical calibré), dépréciation hors artefacts, mise à jour des consommateurs validée
 par leur suite de tests avec restauration, métriques conservatrices, `forge init`,
 règles R1–R13 appliquées par le validateur, 2 micropackages d'exemple.
+
+## [0.4.1] — 2026-08-02
+
+### Modifié
+
+- **Attribution renforcée.** À défaut de marque déposable, la mention d'auteur portée
+  par le NOTICE est la seule protection de l'auteur : `LICENSE` et `NOTICE` sont
+  désormais embarqués dans **chaque** micropackage, et l'auteur, le copyright, la
+  licence et l'URL du dépôt sont centralisés dans `packages/Directory.Build.props`.
+  Les quatre packages ont été republiés (contrats identiques, montées sûres).
+- **Débogage des micropackages.** `DebugType=embedded` et `EmbedAllSources` :
+  symboles et sources sont dans l'assembly. On entre dans le code d'un micropackage
+  au débogueur comme dans du code du projet — sans serveur de symboles, sans
+  SourceLink, hors ligne.
+
+### Ajouté
+
+- **LICENSING.md** : pourquoi Apache-2.0 plutôt que l'AGPL, et ce qui reste réservé.
+- **CLA.md** : accord de contribution, nécessaire pour préserver la possibilité d'une
+  licence différente sur les évolutions futures.

@@ -2,12 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Micro.Text.UrlSanitizer</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Description>Masque les valeurs sensibles (tokens, clés API, mots de passe) présentes dans les paramètres de requête ou les segments d'une URL, pour journalisation sécurisée</Description>
     <PackageTags>url;sanitize;mask;logging;security;token;querystring</PackageTags>
-    <Authors>MicroForge</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath="\" />

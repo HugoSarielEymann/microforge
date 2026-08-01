@@ -66,14 +66,14 @@ public static class Scaffolder
     private static string SrcProjectTemplate(string packageId, string description, IReadOnlyList<string> tags) => $"""
         <Project Sdk="Microsoft.NET.Sdk">
 
+          <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+               packages/Directory.Build.props : ne pas les redéclarer ici. -->
           <PropertyGroup>
             <PackageId>{packageId}</PackageId>
             <Version>1.0.0</Version>
             <Description>{description}</Description>
             <PackageTags>{string.Join(';', tags)}</PackageTags>
-            <Authors>MicroForge</Authors>
             <PackageReadmeFile>README.md</PackageReadmeFile>
-            <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
           </PropertyGroup>
 
           <ItemGroup>

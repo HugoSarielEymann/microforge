@@ -1,13 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Micro.Text.Slugify</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Description>Convertit une chaîne arbitraire en slug URL : suppression des diacritiques, minuscules, séparateur configurable, longueur maximale. Fonction pure et déterministe, sans dépendance.</Description>
     <PackageTags>text;slug;url;normalize;diacritics;string;generic</PackageTags>
-    <Authors>MicroForge</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <!-- CA1308 : les slugs URL sont minuscules par contrat ; ToLowerInvariant est voulu. -->
     <NoWarn>$(NoWarn);CA1308</NoWarn>
   </PropertyGroup>

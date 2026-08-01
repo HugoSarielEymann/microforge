@@ -2,12 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>Micro.Text.CompactDuration</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Description>Parse une chaîne de durée au format compact (30s, 5m, 2h30m, 1h15m30s) en TimeSpan, avec validation stricte et messages d'erreur localisables</Description>
     <PackageTags>text;duration;timespan;parsing;compact;format</PackageTags>
-    <Authors>MicroForge</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath="\" />

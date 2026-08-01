@@ -17,4 +17,40 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 
+  <!--
+    Débogage : symboles ET sources embarqués dans l'assembly.
+
+    C'est la réponse au reproche le plus fréquent fait aux bibliothèques nombreuses :
+    « on ne peut pas entrer dans le code ». Avec un PDB embarqué et les sources
+    incluses, F11 entre dans le micropackage comme dans du code du projet — sans
+    serveur de symboles, sans SourceLink, sans connexion réseau.
+
+    Le surcoût est négligeable ici : un micropackage fait quelques dizaines de lignes.
+  -->
+  <PropertyGroup>
+    <DebugType>embedded</DebugType>
+    <EmbedAllSources>true</EmbedAllSources>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <!--
+    Attribution. À défaut de marque déposée, la mention d'auteur portée par le NOTICE
+    est la seule protection dont dispose l'auteur : la section 4(d) de la licence
+    Apache 2.0 impose de la reproduire dans toute redistribution, y compris modifiée.
+    Elle est donc centralisée ici plutôt que laissée à chaque package.
+  -->
+  <PropertyGroup>
+    <Authors>Hugo Eymann</Authors>
+    <Copyright>Copyright 2026 Hugo Eymann</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/HugoSarielEymann/microforge</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/HugoSarielEymann/microforge</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../NOTICE" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
 </Project>

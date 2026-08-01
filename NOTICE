@@ -2,7 +2,7 @@ MicroForge
 Copyright 2026 Hugo Eymann
 
 Ce produit inclut des logiciels développés par Hugo Eymann
-(https://github.com/hugoeymann/microforge).
+(https://github.com/HugoSarielEymann/microforge).
 
 Conformément à la section 4(d) de la licence Apache 2.0, toute redistribution de
 cette œuvre ou d'une œuvre dérivée doit inclure une copie lisible de ce fichier
@@ -12,3 +12,10 @@ code source, de binaire, ou intégrée dans un produit plus vaste.
 Concrètement : vous pouvez utiliser, modifier, redistribuer et commercialiser
 MicroForge, y compris au sein d'un produit propriétaire. Vous ne pouvez pas en
 retirer la mention de son auteur.
+
+---
+
+La méthode elle-même — spécifiée dans SPEC.md — est librement implémentable dans
+tout autre langage ou écosystème. Les implémentations indépendantes sont
+encouragées ; citer l'origine est demandé par courtoisie, et par la section 4(c)
+lorsqu'elles dérivent de ce code ou de cette documentation.
