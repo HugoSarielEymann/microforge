@@ -18,16 +18,46 @@ public static class FeedIndexer
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
-    /// <summary>Scanne le feed, régénère l'index et l'écrit sur disque.</summary>
-    public static IndexDocument Rebuild(ForgeRoot root)
+    /// <summary>
+    /// Scanne le feed, régénère l'index et l'écrit sur disque.
+    ///
+    /// Seuls les artefacts nouveaux ou modifiés sont décompressés : les autres sont
+    /// relus depuis le cache. Sur un feed de plusieurs milliers de packages, la
+    /// différence se compte en minutes.
+    /// </summary>
+    public static IndexDocument Rebuild(ForgeRoot root) => Rebuild(root, out _);
+
+    /// <summary>
+    /// Variante indiquant combien d'artefacts ont dû être réellement décompressés.
+    /// </summary>
+    public static IndexDocument Rebuild(ForgeRoot root, out int reread)
     {
         ArgumentNullException.ThrowIfNull(root);
 
         var byId = new Dictionary<string, List<(PackageMeta Meta, string Readme)>>(StringComparer.OrdinalIgnoreCase);
+        var cache = FeedCache.Load(root);
+        var present = new List<string>();
+        reread = 0;
 
         foreach (var nupkg in Directory.EnumerateFiles(root.FeedDir, "*.nupkg"))
         {
-            var (meta, readme) = ReadPackage(nupkg);
+            var file = new FileInfo(nupkg);
+            present.Add(file.Name);
+
+            PackageMeta meta;
+            string readme;
+
+            if (cache.TryGet(file) is { } cached)
+            {
+                (meta, readme) = (cached.Meta, cached.Readme);
+            }
+            else
+            {
+                (meta, readme) = ReadPackage(nupkg);
+                cache.Store(file, meta, readme);
+                reread++;
+            }
+
             if (!byId.TryGetValue(meta.Id, out var list))
             {
                 list = [];
@@ -36,6 +66,9 @@ public static class FeedIndexer
 
             list.Add((meta, readme));
         }
+
+        cache.PruneTo(present);
+        cache.Save();
 
         var entries = byId.Values
             .Select(versions =>

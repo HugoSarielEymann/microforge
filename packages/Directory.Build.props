@@ -53,4 +53,21 @@
     <None Include="$(MSBuildThisFileDirectory)../NOTICE" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 
+  <!--
+    Analyseur de pureté (R3). Il travaille sur le modèle sémantique : un alias
+    « using C = System.Console; » ne le contourne pas, contrairement à la détection
+    textuelle qu'il complète. Les violations apparaissent dans l'IDE, à la frappe.
+
+    Référence par projet ici, parce que l'analyseur vit dans ce dépôt. Une
+    bibliothèque créée par « forge create » utilisera plutôt le package publié :
+      <PackageReference Include="MicroForge.Analyzers" Version="…"
+                        PrivateAssets="all" IncludeAssets="analyzers" />
+  -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)../tools/MicroForge.Analyzers/MicroForge.Analyzers.csproj')">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../tools/MicroForge.Analyzers/MicroForge.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>

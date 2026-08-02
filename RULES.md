@@ -22,8 +22,25 @@
 
 ## R3 — Pureté et injection des effets
 
-Tout effet non déterministe est **injecté**, jamais ambiant. API bannies dans `src/`
-(liste appliquée par le validateur) :
+Tout effet non déterministe est **injecté**, jamais ambiant. La règle est appliquée
+par un **analyseur Roslyn** (`MicroForge.Analyzers`) qui travaille sur le modèle
+sémantique : un alias `using C = System.Console;`, un `using static` ou un nom
+partiellement qualifié ne le contournent pas. Les violations apparaissent dans l'IDE
+à la frappe, avant la compilation — pour l'humain comme pour l'agent.
+
+| Diagnostic | Ce qui est refusé |
+|------------|-------------------|
+| `MFG001` | Sortie console |
+| `MFG002` | Horloge ambiante (`DateTime.Now`, `UtcNow`, `Today`…) |
+| `MFG003` | Attente bloquante (`Thread.Sleep`) |
+| `MFG004` | Accès au système de fichiers |
+| `MFG005` | Lancement de processus |
+| `MFG006` | Aléa sans graine |
+| `MFG007` | Blocage synchrone sur de l'asynchrone (`.Result`, `.Wait()`, `.GetResult()`) |
+| `MFG008` | Lecture de l'environnement du processus |
+
+Le validateur conserve en complément une détection textuelle, qui couvre les cas où
+le code ne compile pas encore. Remplacements attendus :
 
 | Interdit | Remplacement |
 |----------|--------------|
@@ -113,6 +130,22 @@ tel quel est refusé :
 Raison : le README est la **seule** chose qu'une IA lit avant de décider de réutiliser
 un package. Un mode d'emploi vide rend le package invisible en pratique, et la
 bibliothèque se remplit de coquilles qui polluent la recherche.
+
+## R8 bis — Intégrité des artefacts
+
+Chaque artefact publié voit son empreinte SHA-256 enregistrée (`registry/artifacts.json`),
+et `forge verify` détecte trois écarts : dépôt manuel hors du circuit de validation,
+modification d'un artefact publié, suppression d'une version.
+
+Le registre **peut** être signé (`forge sign`). Sans signature, qui peut réécrire un
+artefact peut aussi réécrire son empreinte : la détection ne couvre alors que
+l'accident. Avec, falsifier l'ensemble exige la clé privée, qui ne réside jamais dans
+la bibliothèque — seul son emplacement est désigné par une variable d'environnement.
+
+Ce n'est **pas** une signature NuGet reconnue par l'écosystème : celle-là exige un
+certificat délivré par une autorité et se vérifie chez tous les consommateurs. Ici la
+confiance repose sur une clé que vous gérez, vérifiée par cet outil seul — adapté à un
+feed d'équipe, pas à une distribution publique.
 
 ## R8 — Immutabilité des versions publiées
 

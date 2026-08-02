@@ -123,8 +123,10 @@ public static class QueryCommands
     /// <summary>Régénère index, surfaces d'API et vecteurs depuis le feed.</summary>
     public static async Task<int> IndexAsync(ForgeRoot root, string[] args)
     {
-        var document = FeedIndexer.Rebuild(root);
-        Console.WriteLine($"Index régénéré : {document.Packages.Count} package(s).");
+        var document = FeedIndexer.Rebuild(root, out var reread);
+        var versions = document.Packages.Sum(p => p.AllVersions.Count);
+        Console.WriteLine($"Index régénéré : {document.Packages.Count} package(s), {versions} version(s) — " +
+                          $"{reread} artefact(s) relu(s), {versions - reread} depuis le cache.");
 
         var surfaces = FeedIndexer.RebuildApiSurfaces(root, document);
         Console.WriteLine($"Contrats publics : {surfaces.Extracted} nouvellement extrait(s).");

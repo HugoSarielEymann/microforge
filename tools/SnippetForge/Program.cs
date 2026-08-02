@@ -79,6 +79,7 @@ public static class Program
                 "stats" => StatsCommands.Stats(root, args),
                 "doctor" => await DoctorCommands.Doctor(root, args).ConfigureAwait(false),
                 "verify" => IntegrityCommands.Verify(root, args),
+                "sign" => IntegrityCommands.Sign(root, args),
                 "remote" => RemoteCommands.Remote(root, args),
                 "push" => RemoteCommands.Push(root, args),
                 "pull" => await RemoteCommands.PullAsync(root, args).ConfigureAwait(false),
@@ -199,6 +200,9 @@ public static class Program
           stats                        Investissement, réutilisation, économie estimée.
           doctor [--offline]           Vérifie l'installation et indique quoi corriger.
           verify [--adopt]             Confronte le feed aux empreintes enregistrées.
+          sign [--init <clé privée>]   Signe le registre d'empreintes, ou crée la paire
+                                       de clés. Sans signature, les empreintes seules
+                                       détectent l'accident, pas un adversaire.
           use [<chemin>]               Mémorise la racine MicroForge (outil global).
           --version                    Version de l'outil et du format de registre.
 

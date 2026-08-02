@@ -2,6 +2,28 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.6.0] — 2026-08-02
+
+### Ajouté
+
+- **Analyseur Roslyn** (`MicroForge.Analyzers`, diagnostics `MFG001`–`MFG008`).
+  Il remplace une détection par expression régulière qui se contournait trivialement :
+  `using C = System.Console;` passait au travers. L'analyse porte sur le **symbole
+  résolu**, si bien qu'alias, `using static` et noms partiellement qualifiés sont
+  sans effet. Les violations apparaissent **dans l'IDE, à la frappe** — pour le
+  développeur humain autant que pour l'agent. Vérifié : les sept motifs d'évasion sont
+  attrapés, `new Random(42)` (avec graine) ne l'est pas, et les quatre micropackages
+  existants ne produisent aucun faux positif.
+- **`forge sign`** : signature RSA-3072 du registre d'empreintes. Sans elle, qui peut
+  réécrire un artefact peut réécrire son empreinte ; avec, falsifier l'ensemble exige
+  la clé privée — qui ne réside jamais dans la bibliothèque. Ce n'est pas une signature
+  NuGet reconnue par l'écosystème, et RULES.md le dit explicitement.
+- **Indexation incrémentale** : `forge index` ne décompresse plus que les artefacts
+  nouveaux ou modifiés. La validité d'une entrée repose sur la taille et la date du
+  fichier, jamais sur son seul nom. Le gain est nul à douze artefacts et se compte en
+  minutes à plusieurs milliers.
+
+
 ## [0.5.0] — 2026-08-02
 
 ### Ajouté

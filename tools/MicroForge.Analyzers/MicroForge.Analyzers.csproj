@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- netstandard2.0 : contrainte de Roslyn, les analyseurs sont chargés dans le
+         compilateur qui peut tourner sur .NET Framework comme sur .NET. -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>MicroForge.Analyzers</PackageId>
+    <Version>0.5.0</Version>
+    <Authors>Hugo Eymann</Authors>
+    <Copyright>Copyright 2026 Hugo Eymann</Copyright>
+    <Description>Analyseur Roslyn appliquant les règles de pureté de MicroForge : aucun effet ambiant (console, horloge, aléa, délai, E/S, processus) dans un micropackage. Signale les violations dans l'IDE, à la frappe.</Description>
+    <PackageTags>microforge;analyzer;roslyn;purity;architecture</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/HugoSarielEymann/microforge</PackageProjectUrl>
+    <DevelopmentDependency>true</DevelopmentDependency>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Un analyseur se distribue dans analyzers/dotnet/cs, pas dans lib/. -->
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../../LICENSE" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../../NOTICE" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

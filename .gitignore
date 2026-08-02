@@ -26,3 +26,7 @@ registry/*
 demo/nuget.config
 demo/CLAUDE.md
 demo/.github/
+
+# Cle privee de signature : ne doit JAMAIS etre versionnee.
+*.key
+signing-*.key
