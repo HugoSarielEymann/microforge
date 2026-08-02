@@ -2,8 +2,17 @@ using System.Text.Json;
 
 namespace SnippetForge.Telemetry;
 
-/// <summary>Une invocation de l'outil, telle qu'elle a eu lieu.</summary>
-public sealed record UsageEntry(DateTime TimestampUtc, string Command, string Arguments, int ExitCode);
+/// <summary>
+/// Une invocation de l'outil, telle qu'elle a eu lieu.
+/// <paramref name="WorkingDirectory"/> permet d'attribuer l'invocation à un projet ;
+/// il est absent des entrées écrites avant la version 0.7.0.
+/// </summary>
+public sealed record UsageEntry(
+    DateTime TimestampUtc,
+    string Command,
+    string Arguments,
+    int ExitCode,
+    string? WorkingDirectory = null);
 
 /// <summary>
 /// Journal des invocations (registry/usage.log, une ligne JSON par commande).
@@ -47,7 +56,11 @@ public static class UsageLog
         try
         {
             Directory.CreateDirectory(root.RegistryDir);
-            var entry = new UsageEntry(DateTime.UtcNow, command, Sanitize(args), exitCode);
+            // Le dossier courant identifie le projet depuis lequel l'agent a travaillé :
+            // c'est ce qui permet à « forge report » d'attribuer une recherche ou une
+            // publication au projet qui l'a motivée.
+            var entry = new UsageEntry(
+                DateTime.UtcNow, command, Sanitize(args), exitCode, Directory.GetCurrentDirectory());
             File.AppendAllText(PathFor(root), JsonSerializer.Serialize(entry, JsonOptions) + Environment.NewLine);
         }
         catch (IOException)

@@ -77,6 +77,7 @@ public static class Program
                 "deprecations" => LifecycleCommands.ListDeprecations(root),
 
                 "stats" => StatsCommands.Stats(root, args),
+                "report" => StatsCommands.Report(root, args),
                 "doctor" => await DoctorCommands.Doctor(root, args).ConfigureAwait(false),
                 "verify" => IntegrityCommands.Verify(root, args),
                 "sign" => IntegrityCommands.Sign(root, args),
@@ -197,7 +198,9 @@ public static class Program
                                        tests échouent.
 
         MESURER ET DIAGNOSTIQUER
-          stats                        Investissement, réutilisation, économie estimée.
+          report [<projet>]            Ce que la bibliothèque a apporté À CE PROJET :
+                                       code non réécrit, packages forgés, activité.
+          stats                        Rentabilité de la bibliothèque entière.
           doctor [--offline]           Vérifie l'installation et indique quoi corriger.
           verify [--adopt]             Confronte le feed aux empreintes enregistrées.
           sign [--init <clé privée>]   Signe le registre d'empreintes, ou crée la paire

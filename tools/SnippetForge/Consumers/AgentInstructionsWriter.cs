@@ -172,10 +172,28 @@ public static class AgentInstructionsWriter
         délai, aléa, et journalisation via `Microsoft.Extensions.Logging.ILogger`.
         Async de bout en bout avec `CancellationToken` si l'opération peut être longue.
 
+        **Déclarer les aléas de test.** Un aléa est une classe d'entrées dangereuses
+        déjà éprouvée ailleurs (`null-input`, `numeric-overflow`, `secret-leak`,
+        `unicode-edge`, `cancellation`…). Consulter `forge hazards list`, puis :
+
         ```
+        forge hazards declare <Id> --hazards "null-input;numeric-overflow"
+        ```
+
+        Chaque aléa déclaré **doit** être prouvé par un test portant
+        `[Trait("hazard", "<id>")]`, sinon la publication échoue. Si vous découvrez un
+        mode de défaillance absent du catalogue, l'y ajouter : `forge hazards add`.
+        L'acquis devient collectif au lieu d'être redécouvert au projet suivant.
+
+        ```
+        forge review   <Id>      relit ce que le validateur ne sait pas juger
         forge validate <Id>
         forge publish  <Id>
         ```
+
+        `forge review` signale les membres publics jamais testés, les exceptions
+        documentées jamais provoquées et les `TryXxx` (qui ne doivent **jamais** lever).
+        Il ne tranche pas : il pose les questions. Les traiter avant de publier.
 
         `forge publish` peut opposer quatre refus. Les traiter, jamais les contourner :
 

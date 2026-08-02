@@ -2,6 +2,26 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.7.0] — 2026-08-02
+
+### Ajouté
+
+- **`forge report [<projet>]`** : ce que la bibliothèque a apporté **à un projet** —
+  code non réécrit, packages forgés depuis ce projet, activité de recherche. Distinct
+  de `forge stats`, qui juge la rentabilité de la bibliothèque entière : vu d'un
+  projet, tout package réutilisé compte dès le premier usage ; vu de la bibliothèque,
+  ce premier usage ne fait rien économiser. Le rapport le dit explicitement.
+- Le **journal d'usage enregistre le dossier courant**, ce qui permet d'attribuer une
+  recherche ou une publication au projet qui l'a motivée. Les entrées antérieures sont
+  ignorées plutôt qu'attribuées au hasard.
+
+### Modifié
+
+- Le bloc d'instructions agent couvre désormais **`forge hazards`** (déclarer les
+  aléas et les prouver par des traits) et **`forge review`** (relire ce que le
+  validateur ne sait pas juger), tous deux absents depuis leur introduction.
+
+
 ## [0.6.0] — 2026-08-02
 
 ### Ajouté

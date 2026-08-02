@@ -1,11 +1,95 @@
 using SnippetForge.Consumers;
 using SnippetForge.Metrics;
+using SnippetForge.Telemetry;
 
 namespace SnippetForge.Commands;
 
 /// <summary>Mesure de la rentabilité de la bibliothèque.</summary>
 public static class StatsCommands
 {
+    /// <summary>
+    /// Ce que la bibliothèque a apporté à **un projet**, du point de vue de ce projet.
+    /// </summary>
+    public static int Report(ForgeRoot root, string[] args)
+    {
+        var projectPath = Path.GetFullPath(Cli.Arg(args, 1) ?? Directory.GetCurrentDirectory());
+        if (!Directory.Exists(projectPath))
+        {
+            return Cli.Fail($"Projet introuvable : {projectPath}");
+        }
+
+        var references = Directory
+            .EnumerateFiles(projectPath, "*.csproj", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
+                        !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(ConsumerProject.ReadForgeReferences)
+            .DistinctBy(r => r.PackageId, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var footprints = FootprintScanner.ScanAll(root).ToDictionary(f => f.PackageId, StringComparer.OrdinalIgnoreCase);
+        var invocations = ProjectReportBuilder.InvocationsFrom(UsageLog.ReadSince(root, 0), projectPath);
+        var report = ProjectReportBuilder.Build(projectPath, references, footprints, invocations);
+
+        Console.WriteLine($"=== {report.ProjectPath} ===");
+        Console.WriteLine();
+
+        if (report.Reused.Count == 0)
+        {
+            Console.WriteLine("Aucun micropackage référencé. Ce projet n'a rien réutilisé.");
+            Console.WriteLine(report.QueriedLibrary
+                ? "  La bibliothèque a pourtant été interrogée : elle ne couvrait pas le besoin."
+                : "  La bibliothèque n'a jamais été interrogée depuis ce projet — vérifier que");
+            if (!report.QueriedLibrary)
+            {
+                Console.WriteLine("  « forge init . » a bien été lancé et que l'agent lit ses instructions.");
+            }
+
+            return 0;
+        }
+
+        Console.WriteLine("Réutilisé — code que ce projet n'a pas eu à produire :");
+        foreach (var package in report.Reused)
+        {
+            var lines = package.SourceLines > 0 ? $"{package.SourceLines,5} lignes" : "    ? lignes";
+            Console.WriteLine($"  {package.PackageId,-30} {package.Version,-8} {lines}");
+        }
+
+        Console.WriteLine();
+
+        if (report.ForgedHere.Count > 0)
+        {
+            Console.WriteLine("Forgé depuis ce projet — écrit une fois, disponible partout :");
+            foreach (var id in report.ForgedHere)
+            {
+                Console.WriteLine($"  {id}");
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine($"Activité : {report.Searches} recherche(s), {report.Consultations} consultation(s), " +
+                          $"{report.Publications} publication(s).");
+        if (invocations.Count == 0)
+        {
+            Console.WriteLine("  (Aucune invocation attribuée : journal antérieur au suivi du dossier courant.)");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("=== Bilan, vu de ce projet ===");
+        Console.WriteLine($"  Non réécrit : {report.LinesNotWritten,5} lignes  (~{report.TokensNotWritten} tokens)");
+        if (report.ForgedLines > 0)
+        {
+            Console.WriteLine($"  Investi ici : {report.ForgedLines,5} lignes  (~{report.TokensForged} tokens)");
+            Console.WriteLine("                amorti dès le prochain projet qui réutilisera ces packages.");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Ce bilan est celui du projet : tout package réutilisé y compte, même si la");
+        Console.WriteLine("bibliothèque a dû l'écrire une première fois. Pour la rentabilité globale,");
+        Console.WriteLine("qui n'attribue l'économie qu'à partir du deuxième usage : forge stats.");
+        return 0;
+    }
+
     /// <summary>Affiche l'investissement, la réutilisation effective et l'économie estimée.</summary>
     public static int Stats(ForgeRoot root, string[] args)
     {

@@ -18,7 +18,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>forge</ToolCommandName>
     <PackageId>MicroForge.Cli</PackageId>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Authors>Hugo Eymann</Authors>
     <Description>Forge de micropackages MicroForge : recherche, validation, publication et maintenance d'une bibliothèque de code générique réutilisable.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
