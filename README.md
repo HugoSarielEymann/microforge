@@ -53,12 +53,11 @@ Guide complet, chemins exacts et désinstallation : **[INSTALL.md](INSTALL.md)**
 # 1. L'outil, depuis nuget.org
 dotnet tool install --global MicroForge.Cli
 
-# 2. La bibliothèque : votre corpus
-git clone https://github.com/HugoSarielEymann/microforge.git
-cd microforge
-./setup.ps1                    # reconstruit feed, index et contrats
-forge use .                    # désigne cette bibliothèque
-./install.ps1                  # source NuGet machine + instructions IA globales
+# 2. Votre bibliothèque — vide, c'est le cas normal
+forge create ~/microforge
+
+#    (ou, pour rejoindre une bibliothèque existante :
+#     git clone <dépôt> && cd <dépôt> && ./setup.ps1 && forge use .)
 
 # 3. Une fois par projet
 cd <votre projet>

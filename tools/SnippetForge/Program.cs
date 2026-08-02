@@ -26,11 +26,16 @@ public static class Program
                 return 0;
             }
 
-            // « use » doit fonctionner avant toute résolution : c'est la commande qui
-            // enseigne à l'outil où se trouve la racine.
+            // « use » et « create » doivent fonctionner avant toute résolution : l'une
+            // enseigne à l'outil où est la racine, l'autre la crée.
             if (args[0] == "use")
             {
                 return Use(args);
+            }
+
+            if (args[0] == "create")
+            {
+                return CreateCommands.Create(args);
             }
 
             var root = ForgeRoot.Locate();
@@ -137,6 +142,11 @@ public static class Program
         SnippetForge — forge de micropackages MicroForge
 
         Usage : forge <commande> [arguments]
+
+        DÉMARRER
+          create [<dossier>]           Crée une bibliothèque vierge et la mémorise.
+                                       Point de départ quand on n'a pas de corpus.
+          use [<chemin>]               Désigne la bibliothèque à utiliser.
 
         TROUVER ET RÉUTILISER
           search <mots clés> [--tags a;b] [--lexical] [--offline]

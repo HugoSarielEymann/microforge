@@ -15,6 +15,45 @@ public sealed record PullResult(IReadOnlyList<string> Downloaded, IReadOnlyList<
 /// </summary>
 public static class FeedMirror
 {
+    /// <summary>
+    /// Construit le chemin d'un artefact dans le feed, en refusant tout ce qui
+    /// s'échapperait du dossier.
+    ///
+    /// Le contrôle n'est pas théorique : la version rapatriée provient du **dépôt
+    /// distant** (elle est lue dans son index de versions). Un serveur compromis, ou
+    /// simplement mal écrit, qui renverrait « ../../../autre » ferait écrire hors du
+    /// feed. L'identifiant, lui, vient de la ligne de commande — même classe de risque.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Si le nom sort du feed.</exception>
+    public static string ResolveArtifactPath(ForgeRoot root, string packageId, string version)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+
+        var fileName = $"{packageId}.{version}.nupkg";
+
+        // Un nom d'artefact est un segment unique : ni séparateur, ni remontée.
+        if (!string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal) ||
+            fileName.Contains("..", StringComparison.Ordinal) ||
+            fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            throw new InvalidOperationException(
+                $"Nom d'artefact refusé : « {fileName} ». Identifiant ou version invalide.");
+        }
+
+        var destination = Path.GetFullPath(Path.Combine(root.FeedDir, fileName));
+
+        // Ceinture et bretelles : on vérifie aussi le chemin résolu.
+        if (!Metrics.ConsumerRegistry.IsInside(root.FeedDir, destination))
+        {
+            throw new InvalidOperationException(
+                $"Chemin d'artefact hors du feed : « {destination} ». Écriture refusée.");
+        }
+
+        return destination;
+    }
+
     /// <summary>Vrai si la source est un dossier (chemin local ou partage réseau).</summary>
     public static bool IsFolderSource(string source) =>
         !string.IsNullOrWhiteSpace(source) &&
@@ -97,8 +136,8 @@ public static class FeedMirror
                 $"Version {wanted} de {packageId} absente du dépôt. Disponibles : {string.Join(", ", versions)}.");
         }
 
-        var fileName = $"{packageId}.{wanted}.nupkg";
-        var destination = Path.Combine(root.FeedDir, fileName);
+        var destination = ResolveArtifactPath(root, packageId, wanted);
+        var fileName = Path.GetFileName(destination);
         if (File.Exists(destination))
         {
             return new PullResult([], [fileName]);

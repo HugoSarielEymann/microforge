@@ -19,3 +19,10 @@ registry/*
 
 # consumers.json et remote.json référencent des chemins et des réglages propres au
 # poste ; embeddings.json et artifacts.json se recalculent.
+
+# Le projet de demonstration est raccorde par « forge init demo » : ses fichiers
+# generes contiennent des chemins absolus propres au poste. Les versionner ferait
+# pointer un clone vers un dossier inexistant chez celui qui clone.
+demo/nuget.config
+demo/CLAUDE.md
+demo/.github/

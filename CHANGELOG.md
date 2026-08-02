@@ -2,6 +2,34 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.5.0] — 2026-08-02
+
+### Ajouté
+
+- **`forge create [<dossier>]`** : crée une bibliothèque vierge et la mémorise.
+  Adopter MicroForge imposait jusqu'ici de cloner le dépôt de référence, donc
+  d'hériter d'un corpus qui n'est pas le sien. Or partir vide est le cas normal :
+  le corpus est propre à chaque organisation.
+
+### Sécurité
+
+- **Traversée de répertoire lors d'un `forge pull`.** La version rapatriée provient
+  de l'index de versions du **dépôt distant** ; elle servait à construire un chemin
+  de fichier sans contrôle. Un dépôt compromis pouvait faire écrire hors du feed.
+  `FeedMirror.ResolveArtifactPath` valide désormais le nom et vérifie que le chemin
+  résolu reste dans le feed.
+- **Secrets en clair dans le journal d'usage.** `forge remote --source
+  https://user:motdepasse@depot` écrivait le mot de passe dans
+  `registry/usage.log`. Les identifiants d'URL et les valeurs suivant
+  `--api-key`, `--password` ou `--token` sont masqués avant écriture.
+
+### Corrigé
+
+- `demo/nuget.config`, `demo/CLAUDE.md` et `demo/.github/` étaient versionnés
+  avec des **chemins absolus du poste de l'auteur** : un clone pointait vers un
+  dossier inexistant. Ils sont désormais ignorés et régénérés par `forge init demo`.
+- Chemins personnels retirés de la documentation.
+
 ## [0.4.1] — 2026-08-02
 
 ### Modifié

@@ -47,7 +47,7 @@ public static class UsageLog
         try
         {
             Directory.CreateDirectory(root.RegistryDir);
-            var entry = new UsageEntry(DateTime.UtcNow, command, string.Join(' ', args), exitCode);
+            var entry = new UsageEntry(DateTime.UtcNow, command, Sanitize(args), exitCode);
             File.AppendAllText(PathFor(root), JsonSerializer.Serialize(entry, JsonOptions) + Environment.NewLine);
         }
         catch (IOException)
@@ -58,6 +58,65 @@ public static class UsageLog
         {
             // Idem.
         }
+    }
+
+    /// <summary>Options portant une valeur sensible, masquée avant écriture.</summary>
+    private static readonly string[] SensitiveOptions = ["--api-key", "--password", "--token"];
+
+    /// <summary>
+    /// Masque ce qui ne doit pas atterrir dans un fichier en clair.
+    ///
+    /// Le journal est un fichier ordinaire du registre, susceptible d'être partagé ou
+    /// sauvegardé. Or une commande peut porter un secret sans qu'on y pense :
+    /// <c>forge remote --source https://user:motdepasse@depot</c> écrirait le mot de
+    /// passe tel quel.
+    /// </summary>
+    public static string Sanitize(IReadOnlyList<string> args)
+    {
+        ArgumentNullException.ThrowIfNull(args);
+
+        var masked = new List<string>(args.Count);
+        var maskNext = false;
+
+        foreach (var arg in args)
+        {
+            if (maskNext)
+            {
+                masked.Add("***");
+                maskNext = false;
+                continue;
+            }
+
+            maskNext = SensitiveOptions.Contains(arg, StringComparer.OrdinalIgnoreCase);
+            masked.Add(MaskUrlCredentials(arg));
+        }
+
+        return string.Join(' ', masked);
+    }
+
+    /// <summary>Remplace le mot de passe d'une URL « schéma://user:motdepasse@hôte ».</summary>
+    private static string MaskUrlCredentials(string value)
+    {
+        var schemeEnd = value.IndexOf("//", StringComparison.Ordinal);
+        if (schemeEnd < 0)
+        {
+            return value;
+        }
+
+        var authorityStart = schemeEnd + 2;
+        var authorityEnd = value.AsSpan(authorityStart).IndexOfAny('/', '?', '#');
+        var limit = authorityEnd < 0 ? value.Length : authorityStart + authorityEnd;
+
+        var at = value.LastIndexOf('@', Math.Max(0, limit - 1));
+        if (at < authorityStart)
+        {
+            return value;
+        }
+
+        var colon = value.AsSpan(authorityStart, at - authorityStart).IndexOf(':');
+        return colon < 0
+            ? value
+            : string.Concat(value.AsSpan(0, authorityStart + colon + 1), "***", value.AsSpan(at));
     }
 
     /// <summary>Lit les invocations enregistrées après <paramref name="position"/>.</summary>

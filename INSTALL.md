@@ -13,9 +13,7 @@ en désigne une à la fois.
 
 ---
 
-## PC neuf, installation complète
-
-### 1. Installer l'outil
+## PC neuf : installer l'outil
 
 ```bash
 dotnet tool install --global MicroForge.Cli
@@ -25,37 +23,51 @@ forge --version
 Rien d'autre : ni PATH à modifier, ni script à lancer. Fonctionne à l'identique sur
 Windows, macOS et Linux.
 
-### 2. Récupérer la bibliothèque
+---
+
+## Puis : d'où vient votre bibliothèque ?
+
+Deux situations. **Le cas courant est le premier.**
+
+### A — Vous partez de zéro
 
 ```bash
-git clone https://github.com/HugoSarielEymann/microforge.git
-cd microforge
+forge create ~/microforge
 ```
 
-Le dépôt contient les **sources** des micropackages, pas les artefacts : `feed/` et
-`registry/` sont ignorés par Git parce qu'ils se reconstruisent.
+Crée une bibliothèque vierge et la mémorise : dossiers `feed/`, `registry/`,
+`packages/`, plus `RULES.md`, `Directory.Build.props` et un `.gitignore` adaptés.
+Le catalogue des 12 aléas de test est disponible immédiatement.
 
-### 3. Reconstruire le feed local
+Elle est vide, et c'est normal : le corpus est **propre à chaque organisation**. Le
+« générique » d'une équipe finance n'est pas celui d'une équipe jeux. La bibliothèque
+se remplit au fil du travail, chaque fois qu'un besoin générique n'y trouve pas de
+réponse.
 
-```powershell
-.\setup.ps1
-```
+Pensez à renseigner `Authors` et `Copyright` dans `packages/Directory.Build.props` :
+ils voyageront avec chaque artefact publié.
 
-Compile l'outil depuis les sources, exécute ses tests, publie chaque micropackage de
-`packages/` dans `feed/`, et régénère index, contrats publics et vecteurs. **N'écrit
-rien hors du dossier.**
-
-### 4. Désigner la bibliothèque
+### B — Vous rejoignez une bibliothèque existante
 
 ```bash
-forge use <chemin absolu vers microforge>
+git clone <dépôt de votre équipe>
+cd <dépôt>
+./setup.ps1          # reconstruit feed, index et contrats depuis packages/
+forge use .          # désigne cette bibliothèque
 ```
 
-Le chemin est mémorisé dans `~/.microforge/root` : `forge` fonctionne ensuite depuis
-n'importe quel dossier. C'est **la** configuration qui répond à « où sont stockés les
-micropackages ».
+Un dépôt ne contient que les **sources** : `feed/` et `registry/` sont ignorés par
+Git parce qu'ils se reconstruisent. Si votre équipe a un dépôt NuGet d'artefacts,
+`forge remote` puis `forge pull` évitent même la recompilation — voir
+[SERVER.md](SERVER.md).
 
-### 5. Rendre la source NuGet et les instructions IA globales
+Le chemin retenu est mémorisé dans `~/.microforge/root` : `forge` fonctionne ensuite
+depuis n'importe quel dossier. C'est **la** configuration qui répond à « où sont
+stockés les micropackages ».
+
+---
+
+## Enfin : source NuGet et instructions IA globales
 
 ```powershell
 .\install.ps1 -WhatIf     # montre ce qui serait fait
@@ -214,7 +226,7 @@ Forcer le repli (utile en CI) : ajouter `--offline` aux commandes `search`,
 | Rentabilité | `forge stats` |
 
 Dans **Visual Studio** : rien à configurer. `install.ps1` a écrit la source dans
-`C:\Users\hugoe\AppData\Roaming\NuGet\NuGet.Config`, le fichier utilisateur que VS
+`~/AppData/Roaming/NuGet/NuGet.Config` (Windows) ou `~/.nuget/NuGet/NuGet.Config`, le fichier utilisateur que VS
 lit au démarrage. Les packages apparaissent dans *Gérer les packages NuGet* en
 choisissant la source **MicroForge** dans la liste déroulante. Si VS était ouvert
 pendant l'installation, le redémarrer.
