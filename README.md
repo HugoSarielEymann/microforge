@@ -1,9 +1,12 @@
-# MicroForge — bibliothèque de micropackages NuGet pour IA
+# MicroForge — bibliothèque de micropackages pour IA
 
 MicroForge transforme les snippets de code générique que les IA (re)génèrent sans
-cesse en **micropackages NuGet réutilisables, testés, documentés et versionnés**.
+cesse en **micropackages réutilisables, testés, documentés et versionnés**.
 Plus on code, plus la bibliothèque grandit ; moins on régénère, moins on consomme de
 tokens et d'énergie.
+
+Six écosystèmes : **C#/.NET, Python, TypeScript, JavaScript, Go, Rust** — avec deux
+niveaux de garantie assumés, jamais confondus (voir [Multi-langage](#multi-langage)).
 
 Quatre garanties mécaniques, appliquées par l'outil et non par la discipline :
 
@@ -41,9 +44,13 @@ MicroForge/
 │   └── Micro.<Domaine>.<Action>/{README.md, src/, tests/}
 ├── tools/
 │   ├── SnippetForge/         Le CLI
-│   └── SnippetForge.Tests/   390 tests — l'outil qui exige des tests en a
+│   ├── MicroForge.Analyzers/ Analyseur Roslyn (MFG001–MFG008), dans l'IDE
+│   └── SnippetForge.Tests/   474 tests — l'outil qui exige des tests en a
 └── demo/                     Projet consommateur d'exemple
 ```
+
+Un package hors .NET remplace le `.csproj` par un `microforge.json` ; tout le reste
+(README, `src/`, `tests/`) est identique.
 
 ## Installation
 
@@ -72,6 +79,44 @@ insérées dans un bloc délimité.
 Ensuite, plus rien à faire : l'agent lit ses instructions, qui le renvoient vers
 [AGENT.md](AGENT.md), et applique le workflow seul.
 
+## Configuration
+
+Il n'y a **aucun fichier de configuration à écrire à la main**. Tout se règle par
+trois commandes et, si besoin, quatre variables d'environnement.
+
+### Les trois choses à régler
+
+| Question | Commande | Où c'est mémorisé |
+|----------|----------|-------------------|
+| Où est ma bibliothèque ? | `forge use <chemin>` | `~/.microforge/root` |
+| Comment ce projet la voit ? | `forge init .` | `<projet>/nuget.config` (.NET) |
+| Comment l'IA sait quoi faire ? | `forge init .` | `<projet>/CLAUDE.md`, `.github/copilot-instructions.md` |
+
+`forge use` ne sert qu'une fois par machine ; `forge init` une fois par projet. Les
+deux sont **idempotents** : les relancer ne duplique rien et corrige les chemins si
+vous déplacez la bibliothèque.
+
+`forge doctor` vérifie l'ensemble et dit quoi corriger.
+
+### Comment l'outil trouve la bibliothèque
+
+Dans cet ordre, la première réponse gagne :
+
+1. `MICROFORGE_ROOT` — variable d'environnement, prioritaire (utile en CI)
+2. le dossier courant ou l'un de ses parents, s'il ressemble à une bibliothèque
+3. `~/.microforge/root` — ce qu'a écrit `forge use`
+
+### Variables d'environnement
+
+Toutes optionnelles.
+
+| Variable | Effet | Défaut |
+|----------|-------|--------|
+| `MICROFORGE_ROOT` | Force la bibliothèque à utiliser | résolution ci-dessus |
+| `MICROFORGE_EMBED_ENDPOINT` | Serveur d'embeddings | `http://localhost:11434` (Ollama) |
+| `MICROFORGE_EMBED_MODEL` | Modèle d'embeddings | `nomic-embed-text` |
+| `MICROFORGE_API_KEY` | Clé du dépôt NuGet d'équipe — **jamais écrite sur disque** | — |
+
 ### Recherche sémantique (optionnelle)
 
 Sans rien installer, MicroForge utilise un **repli lexical déterministe** intégré
@@ -96,11 +141,11 @@ Variables d'environnement : `MICROFORGE_EMBED_MODEL`, `MICROFORGE_EMBED_ENDPOINT
 
 | Commande | Rôle |
 |----------|------|
-| `search <mots> [--tags a;b] [--lexical]` | Recherche hybride lexicale + vectorielle |
+| `search <mots> [--tags a;b] [--lexical] [--language <id\|all>]` | Recherche hybride, filtrée sur l'écosystème du projet |
 | `info <Id>` | Mode d'emploi, versions, digests de contrat, dépréciations |
 | `list` | Inventaire du feed |
 | `diff <Id> <v1> <v2>` | Différence de contrat public entre deux versions |
-| `new <Id> --description … --tags …` | Scaffold conforme (src, tests, README) |
+| `new <Id> --description … --tags … [--language <id>]` | Scaffold conforme (src, tests, README) |
 | `validate <Id> [--skip-tests]` | Vérification des règles immuables |
 | `review <Id>` | Prépare la relecture : ce que le validateur ne peut pas juger |
 | `hazards [list\|add\|declare]` | Catalogue partagé des aléas de test, cumulatif |
@@ -110,7 +155,11 @@ Variables d'environnement : `MICROFORGE_EMBED_MODEL`, `MICROFORGE_EMBED_ENDPOINT
 | `index` | Régénère index, contrats et vecteurs depuis le feed |
 | `deprecate <Id> --reason … [--versions] [--replacement]` | Déprécie sans altérer les artefacts |
 | `undeprecate <Id>` / `deprecations` | Retire / liste les dépréciations |
-| `init [<dossier>]` | Raccorde un projet : source NuGet + instructions IA (idempotent) |
+| `init [<dossier>] [--language <id>]` | Raccorde un projet : source NuGet + instructions IA, adaptées à l'écosystème (idempotent) |
+| `copy <Id> --into <dossier>` | Copie les sources avec provenance — repli hors .NET |
+| `copied [<projet>]` | Packages copiés : versions en retard, fichiers retouchés |
+| `report [<projet>]` | Ce que la bibliothèque a apporté à CE projet |
+| `sign [--init <clé>]` | Signe le registre d'empreintes (RSA-3072) |
 | `stats` | Investissement, réutilisation effective, économie estimée |
 | `doctor` | Diagnostic de l'installation et corrections à appliquer |
 | `remote --source <url>` | Configure le dépôt NuGet d'équipe |
@@ -224,13 +273,45 @@ Le rapport mesure ce que l'agent a produit (fichiers, lignes nettes), réutilis�
 forge invoquées** pendant la manche — la preuve directe que le workflow est suivi.
 Protocole complet : [TESTING.md](TESTING.md).
 
-## La méthode, au-delà de .NET
+## Multi-langage
+
+Un micropackage déclare son écosystème ; l'outil en déduit **ce qu'il peut prouver**,
+et le dit. Deux profils, jamais confondus :
+
+| | **Profil vérifié** (C#/.NET) | **Profil de base** (Python, TS, JS, Go, Rust) |
+|---|---|---|
+| Recherche, anti-doublon, aléas, README | oui | oui |
+| Tests exigés et exécutés | oui | oui |
+| Effets interdits (`Console`, `DateTime.Now`…) | **analyseur Roslyn, dans l'IDE** | par convention, non vérifié |
+| Contrat public extrait | oui | non |
+| SemVer | **opposable** — le contrat dicte l'incrément | déclaratif |
+| Distribution | NuGet (`dotnet add package`) | copie (`forge copy`) |
+| Maintenance | `forge outdated` / `forge update` | `forge copied` |
+
+**La dégradation est explicite** : `forge new --language python` énonce ce que
+l'écosystème ne garantit pas, `forge publish` le répète, et le bloc d'instructions
+écrit dans le projet commence par là. Jamais de fausse assurance.
+
+La recherche est **filtrée sur l'écosystème du projet courant**, détecté par ses
+fichiers (`*.csproj`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `tsconfig.json`,
+`package.json`). Proposer un package Python à un projet C# ferait perdre du temps et
+pourrait être copié à tort. `--language all` lève le filtre.
+
+```bash
+cd mon-projet-python
+forge init .                      # détecte Python, pas de nuget.config, instructions adaptées
+forge search "découper en lots"   # ne montre que les packages Python
+forge copy Micro.Py.Chunk --into .
+forge copied .                    # versions en retard, fichiers retouchés localement
+```
+
+Un dépôt polyglotte se raccorde par sous-projet : `cd api && forge init .`,
+`cd web && forge init .`.
 
 [SPEC.md](SPEC.md) spécifie la méthode indépendamment du langage (MUST/SHOULD/MAY) :
 micropackages purs et testés, artefacts immuables, contrat public dictant le SemVer,
-anti-duplication à deux signaux, workflow d'agent opposable. Ce dépôt en est
-l'implémentation de référence pour .NET/NuGet ; des implémentations indépendantes
-pour npm, PyPI ou Cargo sont possibles et bienvenues.
+anti-duplication à deux signaux, workflow d'agent opposable. Des implémentations
+natives pour npm, PyPI ou Cargo restent possibles et bienvenues.
 
 ## Licence et attribution
 
@@ -248,7 +329,7 @@ depuis zéro sans vous citer. Une licence protège du code et du texte, pas un c
 
 ## Le corpus livré
 
-Quatre micropackages, 72 tests. Ils ne sont **pas** publiés sur nuget.org — le corpus
+Neuf micropackages, 233 tests. Ils ne sont **pas** publiés sur nuget.org — le corpus
 est propre à chaque organisation (voir [SERVER.md](SERVER.md)).
 
 | Package | Capacité |
@@ -257,11 +338,16 @@ est propre à chaque organisation (voir [SERVER.md](SERVER.md)).
 | `Micro.Text.Slugify` | Slug URL pur et déterministe |
 | `Micro.Text.CompactDuration` | Parse `30s`, `5m`, `2h30m` en `TimeSpan` |
 | `Micro.Text.UrlSanitizer` | Masque secrets et identifiants dans une URL avant journalisation |
+| `Micro.Text.IdentifierCase` | Libellé humain → identifiant (camel, pascal, snake, kebab) |
+| `Micro.Text.SearchMatch` | Un enregistrement répond-il à une recherche saisie par un humain |
+| `Micro.Schema.SampleShape` | Arbre de forme d'un document JSON ou XML échantillon |
+| `Micro.Graph.TopologicalSort` | Tri topologique d'un graphe orienté, regroupé en vagues |
+| `Micro.Edit.History` | Historique d'édition borné : annuler / rétablir |
 
-Les deux derniers ont été **forgés par un agent IA** au cours d'un test du workflow :
-il a cherché, n'a rien trouvé, et les a créés avec tests et mode d'emploi. Chacun
-comportait un défaut sur un cas limite non testé — corrigés depuis, et c'est ce
-constat qui a donné naissance à `forge review` et au catalogue d'aléas.
+La plupart ont été **forgés par un agent IA** au cours de tests du workflow : il a
+cherché, n'a rien trouvé, et les a créés avec tests et mode d'emploi. Deux comportaient
+un défaut sur un cas limite non testé — corrigés depuis, et c'est ce constat qui a
+donné naissance à `forge review` et au catalogue d'aléas.
 
 Une version de `Micro.Text.Slugify` et une de `Micro.Text.UrlSanitizer` sont
 dépréciées : les artefacts restent installables, l'alerte remonte aux consommateurs.

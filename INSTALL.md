@@ -13,6 +13,49 @@ en désigne une à la fois.
 
 ---
 
+## La configuration en trois commandes
+
+Il n'y a **aucun fichier de configuration à écrire à la main**. Le reste de ce guide
+détaille les cas particuliers ; l'essentiel tient ici.
+
+```bash
+dotnet tool install --global MicroForge.Cli   # 1. l'outil       — une fois par machine
+forge create ~/microforge                     # 2. la bibliothèque — une fois
+cd <votre projet> && forge init .             # 3. le projet     — une fois par projet
+```
+
+| Étape | Ce qu'elle règle | Où c'est mémorisé | À refaire quand |
+|-------|------------------|-------------------|-----------------|
+| `forge create` / `forge use` | quelle bibliothèque l'outil utilise | `~/.microforge/root` | vous la déplacez, ou vous en changez |
+| `forge init .` | comment ce projet la voit, et ce que l'IA doit en faire | `<projet>/nuget.config`, `<projet>/CLAUDE.md` | jamais — sauf déplacement (relancer suffit) |
+
+Les deux sont **idempotents** : les relancer ne duplique rien et corrige les chemins.
+`forge doctor` vérifie l'ensemble et dit quoi corriger.
+
+### Comment l'outil trouve la bibliothèque
+
+Dans cet ordre, la première réponse gagne :
+
+1. la variable `MICROFORGE_ROOT` — prioritaire, pratique en CI
+2. le dossier courant ou l'un de ses parents, s'il ressemble à une bibliothèque
+3. `~/.microforge/root` — ce qu'a écrit `forge use`
+
+C'est ce qui permet à un dépôt cloné de fonctionner sans configuration : on est
+dedans, il se reconnaît.
+
+### Les variables d'environnement
+
+Toutes optionnelles ; rien ne casse si aucune n'est posée.
+
+| Variable | Effet | Défaut |
+|----------|-------|--------|
+| `MICROFORGE_ROOT` | Force la bibliothèque à utiliser | résolution ci-dessus |
+| `MICROFORGE_EMBED_ENDPOINT` | Serveur d'embeddings | `http://localhost:11434` |
+| `MICROFORGE_EMBED_MODEL` | Modèle d'embeddings | `nomic-embed-text` |
+| `MICROFORGE_API_KEY` | Clé du dépôt NuGet d'équipe — **jamais écrite sur disque** | — |
+
+---
+
 ## PC neuf : installer l'outil
 
 ```bash
