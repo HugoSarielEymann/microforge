@@ -14,6 +14,29 @@ public sealed class SearchEngineTests
         Entry("Micro.Collections.Chunk", "Découpe une séquence en lots.", "collections", "chunk", "batch"),
     ]);
 
+    private static readonly IndexDocument MixedIndex = new(DateTime.UtcNow,
+    [
+        new IndexEntry("Micro.Collections.Chunk", "1.0.0", ["1.0.0"],
+            "Découpe une séquence en lots.", ["chunk"], "MicroForge", string.Empty, "csharp"),
+        new IndexEntry("Micro.Py.Chunk", "1.0.0", ["1.0.0"],
+            "Découpe une séquence en lots.", ["chunk"], "MicroForge", string.Empty, "python"),
+    ]);
+
+    [Fact]
+    public void Search_FiltreParLangage_NeProposeQueLEcosystemeDemande()
+    {
+        var hits = SearchEngine.Search(MixedIndex, "chunk", [], null, "csharp");
+        Assert.Equal("Micro.Collections.Chunk", Assert.Single(hits).Entry.Id);
+    }
+
+    [Fact]
+    public void Search_LangageNul_MontreTousLesEcosystemes() =>
+        Assert.Equal(2, SearchEngine.Search(MixedIndex, "chunk", [], null, null).Count);
+
+    [Fact]
+    public void Search_LangageInconnu_NeRetourneRien_PlutotQueDuHorsSujet() =>
+        Assert.Empty(SearchEngine.Search(MixedIndex, "chunk", [], null, "cobol"));
+
     [Fact]
     public void Search_TrouveParIdentifiant()
     {

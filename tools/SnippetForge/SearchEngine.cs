@@ -27,7 +27,8 @@ public static class SearchEngine
         IndexDocument index,
         string query,
         IReadOnlyList<string> requiredTags,
-        Func<IndexEntry, double>? semanticScore = null)
+        Func<IndexEntry, double>? semanticScore = null,
+        string? language = null)
     {
         ArgumentNullException.ThrowIfNull(index);
         ArgumentNullException.ThrowIfNull(query);
@@ -36,6 +37,9 @@ public static class SearchEngine
         var tokens = Tokenize(query);
         var filtered = index.Packages
             .Where(p => requiredTags.All(t => p.Tags.Contains(t, StringComparer.OrdinalIgnoreCase)))
+            // Proposer un package Python à un projet C# serait pire qu'inutile : il
+            // ferait perdre du temps et pourrait être copié à tort.
+            .Where(p => language is null || p.Language.Equals(language, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (filtered.Count == 0)

@@ -1,12 +1,16 @@
 namespace SnippetForge;
 
-/// <summary>Métadonnées d'un micropackage extraites de son .nuspec.</summary>
+/// <summary>
+/// Métadonnées d'un micropackage. <paramref name="Language"/> vaut « csharp » par
+/// défaut : c'est le seul écosystème capable de produire un artefact empaqueté.
+/// </summary>
 public sealed record PackageMeta(
     string Id,
     string Version,
     string Description,
     IReadOnlyList<string> Tags,
-    string Authors);
+    string Authors,
+    string Language = "csharp");
 
 /// <summary>Entrée d'index pour un micropackage (dernière version + historique).</summary>
 public sealed record IndexEntry(
@@ -16,7 +20,8 @@ public sealed record IndexEntry(
     string Description,
     IReadOnlyList<string> Tags,
     string Authors,
-    string Readme);
+    string Readme,
+    string Language = "csharp");
 
 /// <summary>Document d'index sérialisé dans registry/index.json.</summary>
 public sealed record IndexDocument(

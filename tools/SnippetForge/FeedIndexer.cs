@@ -101,7 +101,8 @@ public static class FeedIndexer
                     latest.Meta.Description,
                     latest.Meta.Tags,
                     latest.Meta.Authors,
-                    latest.Readme);
+                    latest.Readme,
+                    latest.Meta.Language);
             })
             .OrderBy(e => e.Id, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -186,7 +187,9 @@ public static class FeedIndexer
 
             var readmePath = Path.Combine(directory, "README.md");
             yield return (
-                new PackageMeta(manifest.Id, manifest.Version, manifest.Description, manifest.Tags, manifest.Language),
+                new PackageMeta(
+                    manifest.Id, manifest.Version, manifest.Description, manifest.Tags,
+                    Authors: string.Empty, Language: manifest.Profile.Id),
                 File.Exists(readmePath) ? File.ReadAllText(readmePath) : string.Empty);
         }
     }

@@ -30,7 +30,17 @@ public static class QueryCommands
             }
         }
 
-        var hits = SearchEngine.Search(index, query, tags, semanticScore);
+        // Le langage se déduit du projet courant faute d'être précisé : un projet
+        // Python ne doit pas se voir proposer des packages C#.
+        var language = Cli.Option(args, "--language") ?? DetectProjectLanguage(Directory.GetCurrentDirectory());
+        if (language is not null)
+        {
+            Console.WriteLine($"Écosystème : {language} (--language pour changer, --language all pour tout voir)");
+        }
+
+        var hits = SearchEngine.Search(
+            index, query, tags, semanticScore,
+            language is null or "all" ? null : language);
         semantic?.Dispose();
 
         if (hits.Count == 0)
@@ -50,7 +60,7 @@ public static class QueryCommands
                 ? $"score {hit.Score:0.00} (lexical {hit.LexicalScore:0.#}, sémantique {sem:0.00})"
                 : $"score {hit.Score:0.00} (lexical {hit.LexicalScore:0.#})";
 
-            Console.WriteLine($"  {entry.Id} {entry.LatestVersion}{badge}  [{scoreDetail}]");
+            Console.WriteLine($"  {entry.Id} {entry.LatestVersion} [{entry.Language}]{badge}  [{scoreDetail}]");
             Console.WriteLine($"    tags : {string.Join(", ", entry.Tags)}");
             Console.WriteLine($"    {Cli.Truncate(entry.Description, 110)}");
             foreach (var entryDeprecation in deprecated)
@@ -64,6 +74,33 @@ public static class QueryCommands
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Devine l'écosystème d'un dossier de projet par ses fichiers caractéristiques.
+    /// Retourne null si rien n'est reconnu : mieux vaut tout montrer que filtrer à tort.
+    /// </summary>
+    private static string? DetectProjectLanguage(string directory)
+    {
+        (string Pattern, string Language)[] signatures =
+        [
+            ("*.csproj", "csharp"), ("*.sln", "csharp"),
+            ("pyproject.toml", "python"), ("requirements.txt", "python"), ("setup.py", "python"),
+            ("tsconfig.json", "typescript"),
+            ("go.mod", "go"),
+            ("Cargo.toml", "rust"),
+            ("package.json", "javascript"),
+        ];
+
+        foreach (var (pattern, language) in signatures)
+        {
+            if (Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly).Any())
+            {
+                return language;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Fiche complète d'un package : contrat, versions, dépréciations, mode d'emploi.</summary>

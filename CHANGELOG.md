@@ -2,6 +2,20 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.9.1] — 2026-08-13
+
+### Corrigé
+
+- **La recherche mélangeait les écosystèmes.** L'index ne portait pas le langage
+  (il était rangé dans le champ « auteurs »), si bien qu'un projet C# pouvait se
+  voir proposer un package Python — inutilisable, et copiable à tort. `IndexEntry`
+  porte désormais le langage ; `forge search` déduit l'écosystème du projet courant
+  (`.csproj`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `package.json`…), l'annonce,
+  et `--language all` lève le filtre. Le langage apparaît dans chaque résultat.
+
+  Un dossier non reconnu ne filtre pas : mieux vaut tout montrer que masquer à tort.
+
+
 ## [0.9.0] — 2026-08-02
 
 ### Ajouté
