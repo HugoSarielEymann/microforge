@@ -31,6 +31,84 @@ public static class Scaffolder
     }
 
     /// <summary>
+    /// Scaffolde un micropackage hors .NET : manifeste, README, et des fichiers
+    /// d'amorce dans la convention de l'écosystème.
+    ///
+    /// La structure est volontairement identique partout — <c>src/</c>, <c>tests/</c>,
+    /// <c>README.md</c> — pour que la recherche, l'anti-duplication et les aléas
+    /// s'appliquent sans distinction.
+    /// </summary>
+    public static string ScaffoldForeign(
+        ForgeRoot root,
+        string packageId,
+        string description,
+        IReadOnlyList<string> tags,
+        Languages.LanguageProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(profile);
+        ArgumentException.ThrowIfNullOrWhiteSpace(packageId);
+
+        var packageDir = Path.Combine(root.PackagesDir, packageId);
+        if (Directory.Exists(packageDir))
+        {
+            throw new InvalidOperationException($"Le package {packageId} existe déjà : {packageDir}");
+        }
+
+        var srcDir = Path.Combine(packageDir, "src");
+        var testsDir = Path.Combine(packageDir, "tests");
+        Directory.CreateDirectory(srcDir);
+        Directory.CreateDirectory(testsDir);
+
+        new Languages.PackageManifest(packageId, "1.0.0", profile.Id, description, tags).Save(packageDir);
+        File.WriteAllText(Path.Combine(packageDir, "README.md"), ReadmeTemplate(packageId, description));
+
+        var extension = profile.SourceExtensions[0];
+        var name = packageId.Split('.')[^1].ToLowerInvariant();
+
+        File.WriteAllText(
+            Path.Combine(srcDir, name + extension),
+            $"# TODO : implémenter la capacité unique de ce micropackage.{Environment.NewLine}"
+                .Replace("#", profile.Id == "python" ? "#" : "//", StringComparison.Ordinal));
+
+        // Le test d'amorce échoue volontairement : un micropackage sans vrais tests
+        // ne doit pas pouvoir être publié, quel que soit l'écosystème.
+        File.WriteAllText(
+            Path.Combine(testsDir, "test_" + name + extension),
+            FailingTestTemplate(profile));
+
+        return packageDir;
+    }
+
+    private static string FailingTestTemplate(Languages.LanguageProfile profile) => profile.Id switch
+    {
+        "python" => """
+            def test_a_remplacer():
+                assert False, "Écrire de vrais tests : cas nominal, cas limites, erreurs."
+            """,
+        "go" => """
+            package micropackage
+
+            import "testing"
+
+            func TestARemplacer(t *testing.T) {
+                t.Fatal("Écrire de vrais tests : cas nominal, cas limites, erreurs.")
+            }
+            """,
+        "rust" => """
+            #[test]
+            fn a_remplacer() {
+                panic!("Écrire de vrais tests : cas nominal, cas limites, erreurs.");
+            }
+            """,
+        _ => """
+            test("à remplacer", () => {
+                throw new Error("Écrire de vrais tests : cas nominal, cas limites, erreurs.");
+            });
+            """,
+    };
+
+    /// <summary>
     /// Expose le gabarit aux tests : ils vérifient qu'un README scaffoldé mais non
     /// rédigé est bien refusé à la publication.
     /// </summary>

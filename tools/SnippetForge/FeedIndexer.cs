@@ -70,6 +70,23 @@ public static class FeedIndexer
         cache.PruneTo(present);
         cache.Save();
 
+        // Les écosystèmes sans registre n'ont pas d'artefact : leurs packages vivent
+        // uniquement dans packages/. Les ignorer les rendrait introuvables, donc
+        // inutilisables — la recherche est le cœur du système, elle doit tout voir.
+        foreach (var (meta, readme) in SourceOnlyPackages(root))
+        {
+            if (!byId.TryGetValue(meta.Id, out var list))
+            {
+                list = [];
+                byId[meta.Id] = list;
+            }
+
+            if (!list.Any(v => v.Meta.Version == meta.Version))
+            {
+                list.Add((meta, readme));
+            }
+        }
+
         var entries = byId.Values
             .Select(versions =>
             {
@@ -147,6 +164,31 @@ public static class FeedIndexer
         var json = File.ReadAllText(root.IndexFile);
         return JsonSerializer.Deserialize<IndexDocument>(json, JsonOptions)
                ?? new IndexDocument(DateTime.UtcNow, []);
+    }
+
+    /// <summary>
+    /// Packages déclarés par un manifeste, donc hors .NET : ils n'ont pas d'artefact
+    /// empaqueté, leur source dans <c>packages/</c> fait foi.
+    /// </summary>
+    private static IEnumerable<(PackageMeta Meta, string Readme)> SourceOnlyPackages(ForgeRoot root)
+    {
+        if (!Directory.Exists(root.PackagesDir))
+        {
+            yield break;
+        }
+
+        foreach (var directory in Directory.EnumerateDirectories(root.PackagesDir))
+        {
+            if (Languages.PackageManifest.Load(directory) is not { } manifest)
+            {
+                continue;
+            }
+
+            var readmePath = Path.Combine(directory, "README.md");
+            yield return (
+                new PackageMeta(manifest.Id, manifest.Version, manifest.Description, manifest.Tags, manifest.Language),
+                File.Exists(readmePath) ? File.ReadAllText(readmePath) : string.Empty);
+        }
     }
 
     /// <summary>Chemin canonique d'un artefact dans le feed.</summary>

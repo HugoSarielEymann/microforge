@@ -51,39 +51,54 @@ public static partial class Validator
         if (!Directory.Exists(testsDir)) errors.Add("Dossier tests/ manquant (les tests unitaires sont obligatoires).");
         if (errors.Count > 0) return errors;
 
-        var csproj = Directory.EnumerateFiles(srcDir, "*.csproj").ToList();
-        if (csproj.Count != 1)
+        PackageSource package;
+        try
         {
-            errors.Add($"src/ doit contenir exactement un .csproj (trouvé : {csproj.Count}).");
+            package = PackageSource.Resolve(root, packageDir);
+        }
+        catch (ArgumentException exception)
+        {
+            errors.Add(exception.Message);
             return errors;
         }
 
         var packageId = Path.GetFileName(packageDir.TrimEnd(Path.DirectorySeparatorChar));
-        ValidateMetadata(root, csproj[0], packageId, errors);
-        errors.AddRange(ReadmeQuality.Analyze(File.ReadAllText(readmePath), packageId));
-        ValidateBannedApis(srcDir, errors);
-        ValidateTests(testsDir, errors);
-        ValidateHazards(root, packageDir, testsDir, errors);
 
-        if (errors.Count == 0 && !skipTests)
+        // Les contrôles indépendants de l'écosystème s'appliquent partout : c'est le
+        // socle commun du profil de base.
+        errors.AddRange(ReadmeQuality.Analyze(File.ReadAllText(readmePath), packageId));
+        ValidateCommonMetadata(root, package, packageId, errors);
+        ValidateTests(package, errors);
+        ValidateHazards(root, package, errors);
+
+        // Ce qui suit exige de compiler ou de connaître la syntaxe : réservé au
+        // profil vérifié. Ailleurs, l'absence de ces contrôles est signalée par
+        // « forge validate » et par les commandes de consommation, jamais masquée.
+        if (package.Language.SupportsContractVerification)
         {
-            RunTests(packageDir, errors);
+            ValidateDotNetProject(package, errors);
+            ValidateBannedApis(srcDir, errors);
+
+            if (errors.Count == 0 && !skipTests)
+            {
+                RunTests(packageDir, errors);
+            }
         }
 
         return errors;
     }
 
-    private static void ValidateMetadata(ForgeRoot root, string csprojPath, string folderName, List<string> errors)
+    /// <summary>
+    /// Contrôles valables dans tous les écosystèmes : nommage, version, description,
+    /// tags. Ce sont les données du moteur de recherche et de l'anti-duplication —
+    /// elles ne dépendent d'aucun langage.
+    /// </summary>
+    private static void ValidateCommonMetadata(ForgeRoot root, PackageSource package, string folderName, List<string> errors)
     {
-        var project = XDocument.Load(csprojPath);
-        string Property(string name) =>
-            project.Descendants(name).FirstOrDefault()?.Value.Trim() ?? string.Empty;
-
-        var id = Property("PackageId");
-        var version = Property("Version");
-        var description = Property("Description");
-        var tags = Property("PackageTags")
-            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var id = package.Id;
+        var version = package.Version;
+        var description = package.Description;
+        var tags = package.Tags;
 
         if (!PackageIdRegex().IsMatch(id))
         {
@@ -109,12 +124,19 @@ public static partial class Validator
             errors.Add("Description trop courte (minimum 30 caractères) : elle alimente le moteur de recherche.");
         }
 
-        if (tags.Length < 3)
+        if (tags.Count < 3)
         {
-            errors.Add($"PackageTags insuffisants ({tags.Length}) : minimum 3 tags, séparés par « ; ».");
+            errors.Add($"Tags insuffisants ({tags.Count}) : minimum 3, séparés par « ; ».");
         }
+    }
 
-        if (Property("PackageReadmeFile") != "README.md")
+    /// <summary>Contrôles propres au projet .NET, sans équivalent ailleurs.</summary>
+    private static void ValidateDotNetProject(PackageSource package, List<string> errors)
+    {
+        var project = XDocument.Load(package.ProjectFile);
+        var readmeFile = project.Descendants("PackageReadmeFile").FirstOrDefault()?.Value.Trim();
+
+        if (readmeFile != "README.md")
         {
             errors.Add("PackageReadmeFile doit valoir README.md pour embarquer le mode d'emploi dans le package.");
         }
@@ -143,17 +165,23 @@ public static partial class Validator
         }
     }
 
-    private static void ValidateTests(string testsDir, List<string> errors)
+    /// <summary>
+    /// Chaque écosystème a sa façon de déclarer un test ; l'exigence, elle, est la
+    /// même partout : un micropackage doit prouver son comportement.
+    /// </summary>
+    private static void ValidateTests(PackageSource package, List<string> errors)
     {
-        var hasTestAttribute = Directory
-            .EnumerateFiles(testsDir, "*.cs", SearchOption.AllDirectories)
+        var markers = package.Language.TestMarkers;
+        var hasTests = package.TestFiles
             .Any(f => File.ReadAllText(f) is var code &&
-                      (code.Contains("[Fact", StringComparison.Ordinal) ||
-                       code.Contains("[Theory", StringComparison.Ordinal)));
+                      markers.Any(m => code.Contains(m, StringComparison.Ordinal)));
 
-        if (!hasTestAttribute)
+        if (!hasTests)
         {
-            errors.Add("tests/ ne contient aucun [Fact] ou [Theory] : chaque micropackage doit prouver son comportement.");
+            errors.Add(
+                $"tests/ ne contient aucun test reconnaissable en {package.Language.DisplayName} " +
+                $"(attendu : {string.Join(" ou ", markers.Select(m => $"« {m} »"))}). " +
+                "Chaque micropackage doit prouver son comportement.");
         }
     }
 
@@ -162,23 +190,26 @@ public static partial class Validator
     /// La déclaration sans preuve serait pire que l'absence de déclaration : elle
     /// laisserait croire le cas couvert.
     /// </summary>
-    private static void ValidateHazards(ForgeRoot root, string packageDir, string testsDir, List<string> errors)
+    private static void ValidateHazards(ForgeRoot root, PackageSource package, List<string> errors)
     {
-        var declared = HazardDeclaration.Read(packageDir);
+        var declared = HazardDeclaration.Read(package.Directory);
         if (declared.Count == 0)
         {
             return;
         }
 
-        var testSources = string.Join('\n', Directory
-            .EnumerateFiles(testsDir, "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
-                        !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Select(File.ReadAllText));
+        // Les fichiers de test sont ceux de l'écosystème du package : ne lire que des
+        // .cs rendait la règle inapplicable partout ailleurs.
+        var testSources = string.Join('\n', package.TestFiles.Select(File.ReadAllText));
 
         foreach (var gap in HazardDeclaration.Verify(declared, testSources, HazardCatalogue.Load(root)))
         {
-            errors.Add($"Aléa « {gap.HazardId} » : {gap.Reason}");
+            var reason = gap.Reason.Replace(
+                $"[Trait(\"{HazardCatalogue.TraitKey}\", \"{gap.HazardId}\")]",
+                package.Language.HazardTraitHint.Replace("<id>", gap.HazardId, StringComparison.Ordinal),
+                StringComparison.Ordinal);
+
+            errors.Add($"Aléa « {gap.HazardId} » : {reason}");
         }
     }
 

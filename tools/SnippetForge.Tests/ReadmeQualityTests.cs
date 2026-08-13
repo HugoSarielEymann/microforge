@@ -96,13 +96,35 @@ public sealed class ReadmeQualityTests
     }
 
     [Fact]
-    public void ExempleSansBlocCsharp_EstRefuse()
+    public void ExempleSansBlocDeCode_EstRefuse()
     {
         var readme = Complete(example: "Appelez la méthode ToSlug avec votre titre, elle retourne le slug attendu.");
 
         Assert.Contains(
             ReadmeQuality.Analyze(readme, PackageId),
-            p => p.Contains("bloc ```csharp", StringComparison.Ordinal));
+            p => p.Contains("bloc de code", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Exiger un bloc « csharp » excluait de fait tout micropackage écrit ailleurs
+    /// qu'en .NET — un réflexe à corriger pour ouvrir la forge à d'autres écosystèmes.
+    /// </summary>
+    [Theory]
+    [InlineData("python")]
+    [InlineData("typescript")]
+    [InlineData("")]
+    public void ExempleDansUnAutreLangage_EstAccepte(string fenceLanguage)
+    {
+        var readme = Complete(example: $"""
+            ```{fenceLanguage}
+            from slugify import slugify
+            resultat = slugify("Hello World")
+            ```
+            """);
+
+        Assert.DoesNotContain(
+            ReadmeQuality.Analyze(readme, PackageId),
+            p => p.Contains("bloc de code", StringComparison.Ordinal));
     }
 
     [Fact]

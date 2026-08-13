@@ -2,6 +2,36 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.9.0] — 2026-08-02
+
+### Ajouté
+
+- **Multi-langage, par deux profils.** Un package déclare son écosystème dans
+  `microforge.json` (Python, TypeScript, JavaScript, Go, Rust) ; le `.csproj`
+  continue de tenir ce rôle en C#.
+
+  - **Profil vérifié** (C#/.NET) : inchangé. NuGet, analyseur Roslyn, contrat public
+    extrait, SemVer opposable, binaire déjà testé.
+  - **Profil de base** : structure, README et tests validés ; recherche,
+    anti-duplication et aléas fonctionnent normalement ; consommation par
+    `forge copy`.
+
+  **La dégradation est explicite** : `forge new --language python` énonce ce que
+  l'écosystème ne garantit pas, et `forge publish` répète que le SemVer n'y est
+  pas vérifié. Jamais de fausse assurance.
+- `forge new --language <id>`, index conscient des packages sans artefact,
+  détection de tests et d'aléas par convention d'écosystème
+  (`# hazard: <id>` là où il n'y a pas d'attribut).
+
+### Corrigé
+
+- `forge review` signalait `Deconstruct`, `value__` et `GetHashCode` —
+  générés par le compilateur, jamais écrits par l'auteur. Trois remarques sur cinq
+  portaient sur du code que personne n'avait tapé, ce qui noyait les vraies.
+- Le contrôle du README exigeait un bloc `csharp`, excluant de fait tout package
+  écrit ailleurs qu'en .NET.
+
+
 ## [0.8.0] — 2026-08-02
 
 ### Ajouté

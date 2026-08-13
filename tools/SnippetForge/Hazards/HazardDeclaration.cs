@@ -31,6 +31,14 @@ public static partial class HazardDeclaration
     [GeneratedRegex(@"\[\s*Trait\s*\(\s*""hazard""\s*,\s*""([a-z0-9-]+)""\s*\)\s*\]", RegexOptions.IgnoreCase)]
     private static partial Regex TraitRegex();
 
+    /// <summary>
+    /// Forme neutre pour les écosystèmes sans attribut : un commentaire
+    /// <c># hazard: null-input</c> ou <c>// hazard: null-input</c>. Le mécanisme reste
+    /// le même — déclarer, puis prouver — seule la syntaxe change.
+    /// </summary>
+    [GeneratedRegex(@"(?://|#)\s*hazard\s*:\s*([a-z0-9-]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex CommentMarkerRegex();
+
     /// <summary>Lit les aléas déclarés par un package (liste vide si aucun fichier).</summary>
     public static IReadOnlyList<string> Read(string packageDirectory)
     {
@@ -96,8 +104,8 @@ public static partial class HazardDeclaration
     {
         ArgumentNullException.ThrowIfNull(testSources);
 
-        return TraitRegex()
-            .Matches(testSources)
+        return TraitRegex().Matches(testSources)
+            .Concat(CommentMarkerRegex().Matches(testSources))
             .Select(m => m.Groups[1].Value.ToLowerInvariant())
             .Distinct(StringComparer.Ordinal)
             .ToList();

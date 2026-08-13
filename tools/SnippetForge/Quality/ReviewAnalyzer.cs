@@ -37,6 +37,19 @@ public static partial class ReviewAnalyzer
     [GeneratedRegex(@"^(method|property|ctor|field)\s+([A-Za-z0-9_.<>`]+?)\.([A-Za-z0-9_]+)(?:`\d+)?\s*[(:]")]
     private static partial Regex MemberRegex();
 
+    /// <summary>
+    /// Membres produits par le compilateur, jamais écrits par l'auteur : records
+    /// (<c>Deconstruct</c>, <c>&lt;Clone&gt;$</c>, égalité structurelle), énumérations
+    /// (<c>value__</c>), surcharges d'<c>object</c>. Les signaler noierait les vraies
+    /// absences — c'est ce qu'une revue réelle a montré : trois remarques sur cinq
+    /// portaient sur du code que personne n'avait tapé.
+    /// </summary>
+    private static readonly string[] CompilerGenerated =
+    [
+        "Deconstruct", "value__", "GetHashCode", "Equals", "ToString",
+        "op_Equality", "op_Inequality", "PrintMembers", "$",
+    ];
+
     private static readonly string[] NumericTypes =
         ["System.Int32", "System.Int64", "System.Double", "System.Decimal", "System.Single"];
 
@@ -180,7 +193,7 @@ public static partial class ReviewAnalyzer
         foreach (var member in surface.Members)
         {
             var match = MemberRegex().Match(member);
-            if (match.Success)
+            if (match.Success && !CompilerGenerated.Contains(match.Groups[3].Value, StringComparer.Ordinal))
             {
                 yield return (match.Groups[1].Value, member, match.Groups[3].Value);
             }

@@ -69,7 +69,7 @@ public sealed class ValidatorTests
         using var forge = TempForge.Create();
         var directory = forge.WritePackage("Micro.Text.Slugify", tags: "text;slug");
 
-        Assert.Contains(Validate(forge, directory), e => e.Contains("PackageTags insuffisants", StringComparison.Ordinal));
+        Assert.Contains(Validate(forge, directory), e => e.Contains("Tags insuffisants", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public sealed class ValidatorTests
         using var forge = TempForge.Create();
         var directory = forge.WritePackage("Micro.Text.Slugify", testCode: "public class EntryTests { public void Rien() { } }");
 
-        Assert.Contains(Validate(forge, directory), e => e.Contains("[Fact]", StringComparison.Ordinal));
+        Assert.Contains(Validate(forge, directory), e => e.Contains("aucun test reconnaissable", StringComparison.Ordinal));
     }
 
     [Fact]

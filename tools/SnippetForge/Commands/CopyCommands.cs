@@ -25,10 +25,11 @@ public static class CopyCommands
         }
 
         var package = PackageSource.Resolve(root, packageId);
-        var sources = SourceFiles(package).ToList();
+        var sources = package.SourceFiles.ToList();
         if (sources.Count == 0)
         {
-            return Cli.Fail($"Aucun fichier source dans {package.Directory}/src.");
+            return Cli.Fail(
+                $"Aucun fichier {string.Join('/', package.Language.SourceExtensions)} dans {package.Directory}/src.");
         }
 
         var into = Cli.Option(args, "--into") ?? Path.Combine("MicroForge", package.Id);
@@ -82,10 +83,11 @@ public static class CopyCommands
             package.Id, package.Version, Path.GetRelativePath(project, targetDir), DateTime.UtcNow, hashes));
         manifest.Save();
 
-        Console.WriteLine($"{package.Id} {package.Version} copié — {hashes.Count} fichier(s) dans {into}");
+        Console.WriteLine($"{package.Id} {package.Version} ({package.Language.DisplayName}) copié — " +
+                          $"{hashes.Count} fichier(s) dans {into}");
         Console.WriteLine($"  provenance : {Path.GetRelativePath(project, CopyManifest.PathFor(project))}");
 
-        var dependencies = PackageDependencies(package).ToList();
+        var dependencies = package.Language.IsVerifiedProfile ? PackageDependencies(package).ToList() : [];
         if (dependencies.Count > 0)
         {
             Console.WriteLine();
@@ -174,13 +176,6 @@ public static class CopyCommands
 
         return 0;
     }
-
-    private static IEnumerable<string> SourceFiles(PackageSource package) =>
-        Directory
-            .EnumerateFiles(Path.Combine(package.Directory, "src"), "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
-                        !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .OrderBy(f => f, StringComparer.Ordinal);
 
     /// <summary>
     /// Dépendances NuGet du package : la copie apporte le code, pas ce dont il dépend.

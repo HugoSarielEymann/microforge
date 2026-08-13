@@ -32,8 +32,12 @@ public static partial class ReadmeQuality
     [GeneratedRegex(@"<!--.*?-->", RegexOptions.Singleline)]
     private static partial Regex HtmlCommentRegex();
 
-    [GeneratedRegex(@"```csharp\s*(.*?)```", RegexOptions.Singleline)]
-    private static partial Regex CSharpFenceRegex();
+    /// <summary>
+    /// Bloc de code, quel que soit le langage annoncé. Exiger « csharp » excluait de
+    /// fait tout micropackage écrit ailleurs qu'en .NET.
+    /// </summary>
+    [GeneratedRegex(@"```[a-zA-Z0-9+#-]*\s*\n(.*?)```", RegexOptions.Singleline)]
+    private static partial Regex CodeFenceRegex();
 
     [GeneratedRegex(@"^\|.*\|\s*$", RegexOptions.Multiline)]
     private static partial Regex TableRowRegex();
@@ -92,10 +96,10 @@ public static partial class ReadmeQuality
             yield break;
         }
 
-        var fence = CSharpFenceRegex().Match(example);
+        var fence = CodeFenceRegex().Match(example);
         if (!fence.Success)
         {
-            yield return "README.md : la section « ## Exemple » doit contenir un bloc ```csharp.";
+            yield return "README.md : la section « ## Exemple » doit contenir un bloc de code délimité par ```.";
             yield break;
         }
 

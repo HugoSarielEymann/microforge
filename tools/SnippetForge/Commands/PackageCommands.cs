@@ -2,21 +2,46 @@ using SnippetForge.Api;
 using SnippetForge.Duplicates;
 using SnippetForge.Embeddings;
 using SnippetForge.Integrity;
+using SnippetForge.Languages;
 
 namespace SnippetForge.Commands;
 
 /// <summary>Commandes du cycle de vie d'un micropackage : création, validation, publication, versionnage.</summary>
 public static class PackageCommands
 {
-    /// <summary>Scaffolde un micropackage conforme.</summary>
+    /// <summary>Scaffolde un micropackage conforme, dans l'écosystème demandé.</summary>
     public static int New(ForgeRoot root, string[] args)
     {
         var id = Cli.RequireArg(args, 1, "PackageId (ex : Micro.Text.Slugify)");
         var description = Cli.RequireOption(args, "--description", "elle alimente la recherche (≥ 30 caractères).");
         var tags = Cli.SplitList(Cli.RequireOption(args, "--tags", "minimum 3 tags séparés par « ; »."));
 
-        var directory = Scaffolder.Scaffold(root, id, description, tags);
-        Console.WriteLine($"Micropackage scaffoldé : {directory}");
+        var languageId = Cli.Option(args, "--language") ?? LanguageProfiles.DefaultId;
+        var profile = LanguageProfiles.Find(languageId);
+        if (profile is null)
+        {
+            return Cli.Fail($"Langage inconnu : « {languageId} ». Connus : {LanguageProfiles.KnownIds}.");
+        }
+
+        var directory = profile.IsVerifiedProfile
+            ? Scaffolder.Scaffold(root, id, description, tags)
+            : Scaffolder.ScaffoldForeign(root, id, description, tags, profile);
+
+        Console.WriteLine($"Micropackage {profile.DisplayName} scaffoldé : {directory}");
+        Console.WriteLine($"  {profile.Guarantees}");
+        Console.WriteLine();
+
+        if (!profile.IsVerifiedProfile)
+        {
+            Console.WriteLine("Cet écosystème n'offre pas toutes les garanties :");
+            Console.WriteLine("  - le contrat public n'est pas extractible, donc l'incrément SemVer n'est");
+            Console.WriteLine("    pas vérifié : c'est à vous de l'appliquer honnêtement ;");
+            Console.WriteLine("  - la consommation se fait par « forge copy », pas par un gestionnaire de");
+            Console.WriteLine("    packages : la correction ne se propage pas toute seule.");
+            Console.WriteLine("  Recherche, anti-duplication, aléas et mode d'emploi fonctionnent normalement.");
+            Console.WriteLine();
+        }
+
         Console.WriteLine("Étapes suivantes : implémenter src/, écrire les tests, compléter README.md,");
         Console.WriteLine($"puis « forge publish {id} ».");
         return 0;
@@ -73,7 +98,12 @@ public static class PackageCommands
     public static async Task<int> PublishAsync(ForgeRoot root, string[] args)
     {
         var package = PackageSource.Resolve(root, Cli.RequireArg(args, 1, "chemin ou PackageId"));
-        Console.WriteLine($"Publication de {package.Id} {package.Version} :");
+        Console.WriteLine($"Publication de {package.Id} {package.Version} ({package.Language.DisplayName}) :");
+
+        if (!package.Language.SupportsPackageDistribution)
+        {
+            return await PublishSourceOnlyAsync(root, package, args).ConfigureAwait(false);
+        }
 
         var errors = Validator.Validate(root, package.Directory, skipTests: false);
         if (errors.Count > 0)
@@ -130,6 +160,42 @@ public static class PackageCommands
         Console.WriteLine($"  Publié : {Path.GetFileName(nupkg)} (contrat {candidateSurface.Digest})");
         Console.WriteLine($"  Empreinte : sha256:{hash[..16]}…");
         Console.WriteLine("  Index, surfaces d'API et vecteurs régénérés.");
+        return 0;
+    }
+
+    /// <summary>
+    /// Publication d'un package sans registre : il n'y a pas d'artefact à empaqueter,
+    /// sa source fait foi. Validation et anti-duplication s'appliquent normalement ;
+    /// la vérification de contrat, elle, est impossible et le message le dit.
+    /// </summary>
+    private static async Task<int> PublishSourceOnlyAsync(ForgeRoot root, PackageSource package, string[] args)
+    {
+        var errors = Validator.Validate(root, package.Directory, skipTests: true);
+        if (errors.Count > 0)
+        {
+            foreach (var error in errors)
+            {
+                Console.WriteLine($"  ERREUR : {error}");
+            }
+
+            return Cli.Fail("Publication refusée : le package viole RULES.md.");
+        }
+
+        Console.WriteLine("  Validation conforme.");
+        Console.WriteLine("  Contrat public : non extractible dans cet écosystème — l'incrément SemVer");
+        Console.WriteLine("                   n'est pas vérifié, il relève de votre honnêteté.");
+        Console.WriteLine("  Tests : à exécuter par votre outillage ; la forge ne sait pas les lancer ici.");
+
+        var index = FeedIndexer.Load(root);
+        var duplication = await CheckDuplicationAsync(root, index, package, surface: null, args).ConfigureAwait(false);
+        if (duplication != 0)
+        {
+            return duplication;
+        }
+
+        FeedIndexer.Rebuild(root);
+        Console.WriteLine($"  Indexé : {package.Id} {package.Version} est trouvable et copiable.");
+        Console.WriteLine($"  Consommation : forge copy {package.Id}");
         return 0;
     }
 
@@ -205,7 +271,7 @@ public static class PackageCommands
         ForgeRoot root,
         IndexDocument index,
         PackageSource package,
-        ApiSurface candidateSurface,
+        ApiSurface? surface,
         string[] args)
     {
         if (index.Packages.Count == 0)
@@ -232,7 +298,7 @@ public static class PackageCommands
             {
                 var version = semantic.Versions.GetValueOrDefault(otherId);
                 var other = version is null ? null : surfaces.Load(otherId, version);
-                return other is null ? null : ApiSimilarity.Compare(candidateSurface, other);
+                return other is null ? null : surface is null ? null : ApiSimilarity.Compare(surface, other);
             });
 
             foreach (var candidate in candidates)
