@@ -104,3 +104,56 @@ public sealed class PackageManifestTests : IDisposable
         }
     }
 }
+
+public sealed class ProjectLanguageTests : IDisposable
+{
+    private readonly string _directory = Path.Combine(
+        Path.GetTempPath(), "microforge-langue", Guid.NewGuid().ToString("N"));
+
+    public ProjectLanguageTests() => Directory.CreateDirectory(_directory);
+
+    private void Touch(string name) => File.WriteAllText(Path.Combine(_directory, name), string.Empty);
+
+    [Theory]
+    [InlineData("Projet.csproj", "csharp")]
+    [InlineData("pyproject.toml", "python")]
+    [InlineData("go.mod", "go")]
+    [InlineData("Cargo.toml", "rust")]
+    [InlineData("tsconfig.json", "typescript")]
+    [InlineData("package.json", "javascript")]
+    public void Detect_ReconnaitLEcosystemeParSonFichierSignature(string file, string expected)
+    {
+        Touch(file);
+        Assert.Equal(expected, Languages.ProjectLanguage.Detect(_directory));
+    }
+
+    [Fact]
+    public void Detect_RienDeReconnaissable_NeDevinePas() =>
+        Assert.Null(Languages.ProjectLanguage.Detect(_directory));
+
+    [Fact]
+    public void Detect_DossierInexistant_NeLevePas() =>
+        Assert.Null(Languages.ProjectLanguage.Detect(Path.Combine(_directory, "absent")));
+
+    [Fact]
+    public void Detect_FrontJavaScriptDansUnProjetDotNet_ResteDotNet()
+    {
+        // Un ASP.NET avec un front npm reste un projet .NET du point de vue du
+        // code qu'on y écrit : proposer des packages JavaScript serait un contresens.
+        Touch("package.json");
+        Touch("Api.csproj");
+        Assert.Equal("csharp", Languages.ProjectLanguage.Detect(_directory));
+    }
+
+    [Fact]
+    public void Profile_Inconnu_RetombeSurCSharp() =>
+        Assert.True(Languages.ProjectLanguage.Profile(_directory).IsVerifiedProfile);
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_directory))
+        {
+            Directory.Delete(_directory, recursive: true);
+        }
+    }
+}

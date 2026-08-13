@@ -143,6 +143,35 @@ Le bloc écrit est **autonome** : il contient l'intégralité du workflow action
 autre fichier. Les agents ne suivent pas de façon fiable un chemin de fichier cité en
 référence, surtout hors du dossier de travail.
 
+### Projet hors .NET
+
+`forge init` reconnaît l'écosystème du dossier (`pyproject.toml`, `go.mod`,
+`Cargo.toml`, `tsconfig.json`, `package.json`…) et s'adapte **sans rien vous
+demander** :
+
+```
+> forge init .
+  écosystème    Python — profil de base : structure et tests validés,
+                distribution par copie, SemVer déclaratif
+                consommation par « forge copy » : pas de source NuGet à poser ici
+```
+
+Ce qui change :
+
+| | Profil vérifié (.NET) | Profil de base (autres) |
+|---|---|---|
+| `nuget.config` | écrit | **non écrit** — sans objet |
+| Consommation | `dotnet add package` | `forge copy <Id> --into .` |
+| Instructions IA | référence NuGet, xUnit, `[Trait("hazard", …)]` | copie, conventions du langage, `# hazard: <id>` |
+| Maintenance | `forge outdated` / `forge update` | `forge copied` |
+| Dégradation | — | annoncée en tête du bloc d'instructions |
+
+Un dossier dont l'écosystème n'est pas reconnu est traité comme .NET, et le dit.
+`forge init . --language python` force le profil.
+
+Un dépôt **polyglotte** se raccorde par sous-projet : `cd api && forge init .`,
+`cd web && forge init .`. Chacun reçoit les instructions de son écosystème.
+
 ---
 
 ## Ensuite — rien à faire

@@ -15,6 +15,41 @@ public sealed class AgentInstructionsWriterTests : IDisposable
     private const string ForgeRoot = @"C:\MicroForge";
 
     [Fact]
+    public void BuildBlock_ProfilVerifie_ConsommeParReferenceNuGet()
+    {
+        var block = AgentInstructionsWriter.BuildBlock(ForgeRoot, Languages.LanguageProfiles.CSharp);
+
+        Assert.Contains("dotnet add package", block, StringComparison.Ordinal);
+        Assert.DoesNotContain("forge copy", block, StringComparison.Ordinal);
+        Assert.Contains("[Trait(\"hazard\"", block, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildBlock_ProfilDeBase_ConsommeParCopieEtAnnonceLaDegradation()
+    {
+        var block = AgentInstructionsWriter.BuildBlock(ForgeRoot, Languages.LanguageProfiles.Python);
+
+        // Une instruction « dotnet add package » dans un dépôt Python enverrait
+        // l'agent sur une commande qui n'existe pas.
+        Assert.DoesNotContain("dotnet add package", block, StringComparison.Ordinal);
+        Assert.Contains("forge copy", block, StringComparison.Ordinal);
+        Assert.Contains("--language python", block, StringComparison.Ordinal);
+        Assert.Contains("# hazard: <id>", block, StringComparison.Ordinal);
+        Assert.Contains("profil de base", block, StringComparison.Ordinal);
+        Assert.Contains("forge copied", block, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Ensure_ProfilDifferent_RemplaceLeBloc()
+    {
+        AgentInstructionsWriter.Ensure(ClaudeMdPath, ForgeRoot, Languages.LanguageProfiles.CSharp);
+        var outcome = AgentInstructionsWriter.Ensure(ClaudeMdPath, ForgeRoot, Languages.LanguageProfiles.Python);
+
+        Assert.Equal(InstructionsOutcome.Replaced, outcome);
+        Assert.DoesNotContain("dotnet add package", File.ReadAllText(ClaudeMdPath), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Ensure_FichierAbsent_LeCree()
     {
         var outcome = AgentInstructionsWriter.Ensure(ClaudeMdPath, ForgeRoot);

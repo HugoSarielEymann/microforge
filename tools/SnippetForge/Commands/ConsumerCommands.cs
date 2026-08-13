@@ -23,12 +23,23 @@ public static class ConsumerCommands
             return Cli.Fail($"Dossier de projet introuvable : {target}");
         }
 
-        var withNuGetConfig = !Cli.Flag(args, "--no-nuget-config");
+        // L'écosystème dicte tout le reste : une source NuGet dans un dépôt Python
+        // n'aurait aucun consommateur, et des instructions .NET y enverraient l'agent
+        // sur « dotnet add package », qui n'y existe pas.
+        var profile = Languages.LanguageProfiles.Find(Cli.Option(args, "--language"))
+                      ?? Languages.ProjectLanguage.Profile(target);
+        var detected = Languages.ProjectLanguage.Detect(target);
+
+        // « --no-nuget-config » désigne un dossier qui ne consommera rien (cas de ~/.claude).
+        // Un projet hors .NET consomme bien, lui — par copie : il compte comme consommateur
+        // même s'il n'y a pas de source NuGet à poser.
+        var consumes = !Cli.Flag(args, "--no-nuget-config");
+        var withNuGetConfig = consumes && profile.SupportsPackageDistribution;
         var withInstructions = !Cli.Flag(args, "--no-agent-instructions");
 
         // Raccorder un dossier parent déposerait des instructions valables pour des
         // dizaines de dépôts sans rapport, et fausserait le décompte des consommateurs.
-        if (withNuGetConfig && !Cli.Flag(args, "--force"))
+        if (consumes && !Cli.Flag(args, "--force"))
         {
             var shape = ProjectShapeAnalyzer.Analyze(target);
             if (shape.Warning is { } warning)
@@ -40,12 +51,21 @@ public static class ConsumerCommands
             }
         }
 
-        if (!withNuGetConfig && !withInstructions)
+        if (!consumes && !withInstructions)
         {
             return Cli.Fail("Les deux volets sont désactivés : il n'y a rien à faire.");
         }
 
         Console.WriteLine($"Raccordement de {target} à MicroForge ({root.Path}) :\n");
+        Console.WriteLine(detected is null
+            ? $"  écosystème    non reconnu → {profile.DisplayName} par défaut (--language pour préciser)"
+            : $"  écosystème    {profile.DisplayName} — {profile.Guarantees}");
+        if (!profile.SupportsPackageDistribution)
+        {
+            Console.WriteLine("                consommation par « forge copy » : pas de source NuGet à poser ici");
+        }
+
+        Console.WriteLine();
 
         if (withNuGetConfig)
         {
@@ -71,28 +91,40 @@ public static class ConsumerCommands
             foreach (var (relativePath, agent) in targets)
             {
                 var path = Path.Combine(target, relativePath);
-                var outcome = AgentInstructionsWriter.Ensure(path, root.Path);
+                var outcome = AgentInstructionsWriter.Ensure(path, root.Path, profile);
                 Console.WriteLine($"  {relativePath,-32} [{Describe(outcome)}]  ({agent})");
             }
 
             Console.WriteLine("                instructions complètes, autonomes, délimitées par des marqueurs");
         }
 
-        if (withNuGetConfig)
+        if (consumes)
         {
             var index = FeedIndexer.Load(root);
+            var available = index.Packages
+                .Where(p => p.Language.Equals(profile.Id, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
             Console.WriteLine();
-            Console.WriteLine($"{index.Packages.Count} micropackage(s) désormais installable(s) depuis ce projet :");
-            foreach (var entry in index.Packages)
+            Console.WriteLine($"{available.Count} micropackage(s) {profile.DisplayName} disponible(s) depuis ce projet :");
+            foreach (var entry in available)
             {
-                Console.WriteLine($"  dotnet add package {entry.Id} --version {entry.LatestVersion}");
+                Console.WriteLine(withNuGetConfig
+                    ? $"  dotnet add package {entry.Id} --version {entry.LatestVersion}"
+                    : $"  forge copy {entry.Id} --into .");
+            }
+
+            var elsewhere = index.Packages.Count - available.Count;
+            if (elsewhere > 0)
+            {
+                Console.WriteLine($"  ({elsewhere} autre(s) dans d'autres écosystèmes — forge search --language all)");
             }
         }
 
         // Le projet est mémorisé pour que « forge stats » sache où mesurer la réutilisation.
-        // Sans source NuGet, le dossier ne consommera jamais de package : l'enregistrer
+        // Un dossier explicitement déclaré non consommateur ne l'est pas : l'enregistrer
         // gonflerait le dénominateur du bilan (cas de ~/.claude, qui n'est pas un projet).
-        if (withNuGetConfig)
+        if (consumes)
         {
             var registry = ConsumerRegistry.Load(root);
             if (registry.Register(target))

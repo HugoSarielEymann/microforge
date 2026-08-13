@@ -6,6 +6,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : Se
 
 ### Corrigé
 
+- **`forge init` écrivait des instructions .NET dans tous les projets.** Un dépôt
+  Python recevait « utiliser `dotnet add package` », une commande qui n'y existe pas,
+  et une source NuGet sans consommateur. `forge init` reconnaît désormais l'écosystème
+  du dossier et adapte le bloc : consommation par `forge copy`, conventions de test du
+  langage, marqueur d'aléa `# hazard: <id>`, maintenance par `forge copied`, et la
+  dégradation du profil annoncée en tête. `--language` force le profil.
+
 - **La recherche mélangeait les écosystèmes.** L'index ne portait pas le langage
   (il était rangé dans le champ « auteurs »), si bien qu'un projet C# pouvait se
   voir proposer un package Python — inutilisable, et copiable à tort. `IndexEntry`

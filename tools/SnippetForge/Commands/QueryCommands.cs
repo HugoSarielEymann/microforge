@@ -32,7 +32,8 @@ public static class QueryCommands
 
         // Le langage se déduit du projet courant faute d'être précisé : un projet
         // Python ne doit pas se voir proposer des packages C#.
-        var language = Cli.Option(args, "--language") ?? DetectProjectLanguage(Directory.GetCurrentDirectory());
+        var language = Cli.Option(args, "--language")
+                       ?? Languages.ProjectLanguage.Detect(Directory.GetCurrentDirectory());
         if (language is not null)
         {
             Console.WriteLine($"Écosystème : {language} (--language pour changer, --language all pour tout voir)");
@@ -74,33 +75,6 @@ public static class QueryCommands
         }
 
         return 0;
-    }
-
-    /// <summary>
-    /// Devine l'écosystème d'un dossier de projet par ses fichiers caractéristiques.
-    /// Retourne null si rien n'est reconnu : mieux vaut tout montrer que filtrer à tort.
-    /// </summary>
-    private static string? DetectProjectLanguage(string directory)
-    {
-        (string Pattern, string Language)[] signatures =
-        [
-            ("*.csproj", "csharp"), ("*.sln", "csharp"),
-            ("pyproject.toml", "python"), ("requirements.txt", "python"), ("setup.py", "python"),
-            ("tsconfig.json", "typescript"),
-            ("go.mod", "go"),
-            ("Cargo.toml", "rust"),
-            ("package.json", "javascript"),
-        ];
-
-        foreach (var (pattern, language) in signatures)
-        {
-            if (Directory.EnumerateFiles(directory, pattern, SearchOption.TopDirectoryOnly).Any())
-            {
-                return language;
-            }
-        }
-
-        return null;
     }
 
     /// <summary>Fiche complète d'un package : contrat, versions, dépréciations, mode d'emploi.</summary>

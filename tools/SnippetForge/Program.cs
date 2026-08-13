@@ -153,15 +153,18 @@ public static class Program
           use [<chemin>]               Désigne la bibliothèque à utiliser.
 
         TROUVER ET RÉUTILISER
-          search <mots clés> [--tags a;b] [--lexical] [--offline]
+          search <mots clés> [--tags a;b] [--lexical] [--offline] [--language <id|all>]
                                        Recherche hybride (lexicale + sémantique).
+                                       L'écosystème est déduit du projet courant :
+                                       un projet C# ne voit pas les packages Python.
           info <PackageId>             Mode d'emploi, versions, contrats, dépréciations.
           list                         Inventaire du feed.
           diff <Id> <v1> <v2>          Différence de contrat public entre deux versions.
 
         FORGER ET PUBLIER
-          new <PackageId> --description "…" --tags "a;b;c"
-                                       Scaffolde un micropackage conforme.
+          new <PackageId> --description "…" --tags "a;b;c" [--language <id>]
+                                       Scaffolde un micropackage conforme. Sans
+                                       --language : C#, seul profil vérifié.
           validate <Id|chemin> [--skip-tests]
                                        Vérifie les règles immuables de RULES.md.
           review <Id|chemin>           Prépare la relecture : confronte le contrat
