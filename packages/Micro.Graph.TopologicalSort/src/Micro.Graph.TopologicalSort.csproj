@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Graph.TopologicalSort</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Ordonne les noeuds d'un graphe orienté par tri topologique et les regroupe en vagues parallèles, avec détection et report des cycles.</Description>
+    <PackageTags>graph;topological;sort;cycle;dag;parallel;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>

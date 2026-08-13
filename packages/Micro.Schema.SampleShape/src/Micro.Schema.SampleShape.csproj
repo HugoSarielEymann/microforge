@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Schema.SampleShape</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Deduit l'arbre de forme (noms, types, repetitions, imbrications) d'un document d'exemple JSON ou XML, et reemet un exemple depuis une forme, pour proposer un schema a partir d'une charge utile collee.</Description>
+    <PackageTags>schema;json;xml;shape;inference;sample;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>

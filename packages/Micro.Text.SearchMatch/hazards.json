@@ -1,0 +1,9 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-input",
+    "empty-collection",
+    "unicode-edge",
+    "boundary-value"
+  ]
+}

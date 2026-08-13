@@ -36,6 +36,24 @@ disposition publique.
 
 ## Reporté (rappels)
 
+0. **Mode copie + multi-langage — à traiter ensemble.** Les deux exigent le même
+   préalable : une notion de **langage** dans un package (`Scaffolder`, `Validator` et
+   `ApiSurfaceExtractor` supposent aujourd'hui C#). Conception retenue : **deux
+   profils**.
+
+   - **Profil vérifié** (C#/.NET, référence) : rien ne change. Empaquetage NuGet,
+     analyseur Roslyn, contrat public extrait, SemVer opposable, binaire déjà testé.
+   - **Profil de base** (autres langages) : structure, README et tests validés ;
+     distribution par `forge copy` avec manifeste de **provenance** (version + empreinte
+     par fichier), sans quoi le mode copie détruit la mise à jour et la détection de
+     divergence.
+
+   Règle absolue : **la dégradation doit être explicite**. `forge outdated` ne dit
+   jamais « SÛRE » sur un profil qui ne sait pas le prouver.
+
+   Risque principal à surveiller : affaiblir le chemin C# en le généralisant. Ses
+   garanties ne sont pas négociables.
+
 7. **Multi-langage.** SPEC.md est écrit ; une implémentation npm / PyPI / Cargo est un
    projet en soi. Trois voies possibles : portage complet, cœur commun avec adaptateurs
    par écosystème, ou spécification + implémentations de référence. La troisième donne

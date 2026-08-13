@@ -2,6 +2,26 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
+## [0.8.0] — 2026-08-02
+
+### Ajouté
+
+- **`forge copy <Id>`** : distribution par copie de source, pour les projets qui ne
+  peuvent pas référencer un package. Un manifeste de **provenance**
+  (`.microforge/copied.json`) enregistre version et empreinte de chaque fichier posé
+  — c'est ce qui distingue une copie d'un copier-coller. Sans lui, le code devient
+  orphelin : plus de mise à jour, plus de détection de divergence.
+- **`forge copied [<projet>]`** : versions en retard et fichiers retouchés
+  localement. Une recopie qui écraserait une modification est **refusée** sauf
+  `--force` : c'est le seul moment où l'on peut encore arbitrer.
+- Les dépendances NuGet du package sont annoncées à la copie : elle apporte le code,
+  pas ce dont il dépend.
+
+La référence NuGet reste préférable partout où elle est possible — binaire déjà
+testé, contrat vérifié, correction propagée par une commande. La copie est un repli,
+et les messages le disent.
+
+
 ## [0.7.0] — 2026-08-02
 
 ### Ajouté

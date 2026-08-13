@@ -85,6 +85,8 @@ public static class Program
                 "push" => RemoteCommands.Push(root, args),
                 "pull" => await RemoteCommands.PullAsync(root, args).ConfigureAwait(false),
                 "bench" => BenchCommands.Bench(root, args),
+                "copy" => CopyCommands.Copy(root, args),
+                "copied" => CopyCommands.Copied(root, args),
                 "init" => ConsumerCommands.Init(root, args),
                 "outdated" => ConsumerCommands.Outdated(root, args),
                 "update" => ConsumerCommands.Update(root, args),
@@ -192,6 +194,12 @@ public static class Program
                           [--agents "Claude,Copilot"]
                                        Raccorde un projet : source NuGet + instructions
                                        agent. Idempotent. Défaut : dossier courant.
+          copy <Id> [--into <dossier>] [--project <p>] [--force]
+                                       Copie les sources dans le projet, avec
+                                       provenance. Repli quand la référence NuGet
+                                       n'est pas possible — elle reste préférable.
+          copied [<projet>]            Packages copiés : versions en retard, fichiers
+                                       retouchés localement.
           outdated <projet|.csproj>    Diagnostique les références : sûres vs à relire.
           update <projet|.csproj> [--safe-only] [--test "dotnet test"]
                                        Applique les montées ; restaure le projet si vos

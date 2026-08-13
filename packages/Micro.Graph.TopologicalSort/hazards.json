@@ -1,0 +1,7 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-collection",
+    "malformed-input"
+  ]
+}
