@@ -49,9 +49,30 @@ jobs:
           failed=0
           for package in packages/*/; do
             [ -d "${package}tests" ] || continue
-            echo "::group::$(basename "$package")"
-            if ! dotnet test "${package}tests" -c Release --nologo --verbosity normal; then
-              echo "::error::Tests en échec pour $(basename "$package")"
+            id=$(basename "$package")
+            echo "::group::$id"
+            # Un package hors .NET n'a pas de projet MSBuild : « dotnet test » y
+            # échouerait sur l'absence de fichier projet, pas sur un vrai défaut.
+            # Chaque écosystème a son lanceur ; on l'appelle, et on refuse de faire
+            # passer pour « testé » un package dont on n'a rien exécuté.
+            if [ -f "${package}microforge.json" ]; then
+              langue=$(sed -n 's/.*"language"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+                "${package}microforge.json" | head -1)
+              case "$langue" in
+                python)
+                  python -m pip install --quiet pytest
+                  if ! python -m pytest "${package}tests" -q; then
+                    echo "::error::Tests en échec pour $id"
+                    failed=1
+                  fi
+                  ;;
+                *)
+                  echo "::warning::$id ($langue) : aucun lanceur de tests configuré dans cette CI." \
+                       "Les tests existent et sont exigés, mais ne sont pas exécutés ici."
+                  ;;
+              esac
+            elif ! dotnet test "${package}tests" -c Release --nologo --verbosity normal; then
+              echo "::error::Tests en échec pour $id"
               failed=1
             fi
             echo "::endgroup::"

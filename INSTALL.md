@@ -204,6 +204,7 @@ Ce qui change :
 | | Profil vérifié (.NET) | Profil de base (autres) |
 |---|---|---|
 | `nuget.config` | écrit | **non écrit** — sans objet |
+| Tests | exigés **et exécutés** avant publication | exigés, exécutés par **votre** lanceur |
 | Consommation | `dotnet add package` | `forge copy <Id> --into .` |
 | Instructions IA | référence NuGet, xUnit, `[Trait("hazard", …)]` | copie, conventions du langage, `# hazard: <id>` |
 | Maintenance | `forge outdated` / `forge update` | `forge copied` |

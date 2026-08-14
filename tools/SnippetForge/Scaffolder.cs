@@ -21,7 +21,7 @@ public static class Scaffolder
         Directory.CreateDirectory(srcDir);
         Directory.CreateDirectory(testsDir);
 
-        File.WriteAllText(Path.Combine(packageDir, "README.md"), ReadmeTemplate(packageId, description));
+        File.WriteAllText(Path.Combine(packageDir, "README.md"), ReadmeTemplate(packageId, description, Languages.LanguageProfiles.CSharp));
         File.WriteAllText(Path.Combine(srcDir, $"{packageId}.csproj"), SrcProjectTemplate(packageId, description, tags));
         File.WriteAllText(Path.Combine(srcDir, $"{className}.cs"), ClassTemplate(packageId, className));
         File.WriteAllText(Path.Combine(testsDir, $"{packageId}.Tests.csproj"), TestProjectTemplate(packageId));
@@ -61,7 +61,7 @@ public static class Scaffolder
         Directory.CreateDirectory(testsDir);
 
         new Languages.PackageManifest(packageId, "1.0.0", profile.Id, description, tags).Save(packageDir);
-        File.WriteAllText(Path.Combine(packageDir, "README.md"), ReadmeTemplate(packageId, description));
+        File.WriteAllText(Path.Combine(packageDir, "README.md"), ReadmeTemplate(packageId, description, profile));
 
         var extension = profile.SourceExtensions[0];
         var name = packageId.Split('.')[^1].ToLowerInvariant();
@@ -113,9 +113,15 @@ public static class Scaffolder
     /// rédigé est bien refusé à la publication.
     /// </summary>
     public static string ReadmeTemplateForTests(string packageId, string description) =>
-        ReadmeTemplate(packageId, description);
+        ReadmeTemplate(packageId, description, Languages.LanguageProfiles.CSharp);
 
-    private static string ReadmeTemplate(string packageId, string description) => $"""
+    /// <summary>
+    /// Gabarit de README. Le bloc d'exemple porte le langage du package : proposer
+    /// « csharp » à un auteur Python l'inviterait à écrire un exemple faux, et le
+    /// contrôle de qualité du README exige un exemple crédible.
+    /// </summary>
+    private static string ReadmeTemplate(
+        string packageId, string description, Languages.LanguageProfile profile) => $"""
         # {packageId}
 
         ## Description
@@ -136,8 +142,8 @@ public static class Scaffolder
 
         ## Exemple
 
-        ```csharp
-        // Exemple d'appel minimal, compilable, à compléter.
+        ```{profile.Id}
+        {(profile.Id == "python" ? "#" : "//")} Exemple d'appel minimal, exécutable, à compléter.
         ```
         """;
 

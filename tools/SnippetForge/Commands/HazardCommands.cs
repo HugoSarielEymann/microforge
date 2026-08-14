@@ -96,7 +96,9 @@ public static class HazardCommands
         Console.WriteLine("Chacun doit être prouvé par au moins un test :");
         foreach (var hazard in hazards)
         {
-            Console.WriteLine($"  [Trait(\"{HazardCatalogue.TraitKey}\", \"{hazard}\")]");
+            // La syntaxe dépend de l'écosystème : afficher l'attribut xUnit à un
+            // auteur Python lui ferait écrire une preuve que rien ne reconnaîtra.
+            Console.WriteLine($"  {package.Language.HazardTraitHint.Replace("<id>", hazard, StringComparison.Ordinal)}");
         }
 
         Console.WriteLine();

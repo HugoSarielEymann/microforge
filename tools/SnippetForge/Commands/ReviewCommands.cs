@@ -18,14 +18,35 @@ public static class ReviewCommands
         Console.WriteLine($"Revue de {package.Id} {package.Version}");
         Console.WriteLine();
 
+        // La revue repose entièrement sur le contrat public extrait de l'assembly.
+        // Sans lui, il n'y a rien à confronter aux tests : mieux vaut le dire que
+        // lancer MSBuild sur un package qui n'a pas de projet et rendre son erreur.
+        if (!package.Language.SupportsContractVerification)
+        {
+            Console.WriteLine($"Écosystème {package.Language.DisplayName} : le contrat public n'est pas");
+            Console.WriteLine("extractible, la revue automatique n'a rien à confronter aux tests.");
+            Console.WriteLine();
+            Console.WriteLine("À relire à la main, dans cet ordre :");
+            Console.WriteLine("  1. chaque élément public de src/ est-il cité dans tests/ ?");
+            Console.WriteLine("  2. chaque erreur documentée est-elle réellement provoquée par un test ?");
+            Console.WriteLine("  3. les fonctions annoncées comme ne levant jamais tiennent-elles la promesse ?");
+            Console.WriteLine("  4. les bornes (0, vide, valeur maximale) sont-elles abordées ?");
+            Console.WriteLine();
+
+            // Les aléas, eux, se vérifient sans contrat : la preuve est un marqueur
+            // dans le texte des tests, reconnu dans tous les écosystèmes.
+            ReportHazards(root, package, ReadAll(Path.Combine(package.Directory, "tests"), package.Language));
+            return 0;
+        }
+
         var surface = ExtractSurface(package, out var error);
         if (surface is null)
         {
             return Cli.Fail(error!);
         }
 
-        var sourceText = ReadAll(Path.Combine(package.Directory, "src"));
-        var testText = ReadAll(Path.Combine(package.Directory, "tests"));
+        var sourceText = ReadAll(Path.Combine(package.Directory, "src"), package.Language);
+        var testText = ReadAll(Path.Combine(package.Directory, "tests"), package.Language);
         var findings = ReviewAnalyzer.Analyze(surface, sourceText, testText);
 
         Console.WriteLine($"Contrat public : {surface.Members.Count} membre(s), empreinte {surface.Digest}");
@@ -138,15 +159,20 @@ public static class ReviewCommands
         }
     }
 
-    private static string ReadAll(string directory)
+    /// <summary>
+    /// Concatène les sources d'un dossier. Les extensions viennent du profil : filtrer
+    /// sur « .cs » dans un package Python renverrait du vide, et les aléas prouvés par
+    /// un marqueur passeraient pour absents.
+    /// </summary>
+    private static string ReadAll(string directory, Languages.LanguageProfile profile)
     {
         if (!Directory.Exists(directory))
         {
             return string.Empty;
         }
 
-        var files = Directory
-            .EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
+        var files = profile.SourceExtensions
+            .SelectMany(extension => Directory.EnumerateFiles(directory, "*" + extension, SearchOption.AllDirectories))
             .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal) &&
                         !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
 

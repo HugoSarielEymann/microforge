@@ -281,7 +281,8 @@ et le dit. Deux profils, jamais confondus :
 | | **Profil vérifié** (C#/.NET) | **Profil de base** (Python, TS, JS, Go, Rust) |
 |---|---|---|
 | Recherche, anti-doublon, aléas, README | oui | oui |
-| Tests exigés et exécutés | oui | oui |
+| Tests exigés | oui | oui |
+| Tests **exécutés** par la forge | oui, en `Release`, avant publication | non — c'est votre lanceur qui doit le faire |
 | Effets interdits (`Console`, `DateTime.Now`…) | **analyseur Roslyn, dans l'IDE** | par convention, non vérifié |
 | Contrat public extrait | oui | non |
 | SemVer | **opposable** — le contrat dicte l'incrément | déclaratif |

@@ -59,6 +59,13 @@ public sealed record PackageManifest(
         File.WriteAllText(PathFor(packageDirectory), JsonSerializer.Serialize(this, JsonOptions));
     }
 
-    /// <summary>Le profil correspondant au langage déclaré.</summary>
+    /// <summary>
+    /// Le profil correspondant au langage déclaré. Il est **déduit**, jamais lu :
+    /// sérialisé, il donnerait à croire qu'éditer `supportsContractVerification`
+    /// dans le manifeste change quelque chose — alors que la valeur est ignorée au
+    /// chargement. Un fichier destiné à être relu et modifié à la main ne doit pas
+    /// contenir de champ décoratif.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public LanguageProfile Profile => LanguageProfiles.Resolve(Language);
 }

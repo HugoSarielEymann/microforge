@@ -2,9 +2,43 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Versions : SemVer.
 
-## [0.9.1] — 2026-08-13
+## [0.9.1] — 2026-08-14
 
 ### Corrigé
+
+Un cycle complet exécuté sur un vrai package Python (`new` → implémenter →
+`hazards declare` → `validate` → `publish` → `copy` → `copied`) a mis au jour
+quatre défauts que la suite de tests ne pouvait pas voir, tous sur le chemin
+qu'un nouvel arrivant emprunte en premier :
+
+- **`forge review` plantait sur un package hors .NET**, en rendant l'erreur brute de
+  MSBuild (« Spécifiez un fichier projet »). Or le bloc d'instructions écrit dans
+  chaque projet demande de lancer `forge review` avant de publier : la consigne livrée
+  était cassée. La commande explique désormais ce qu'elle ne peut pas vérifier, donne
+  la grille de relecture manuelle, et **contrôle quand même les aléas** — leur preuve
+  est un marqueur dans le texte des tests, lisible dans tous les écosystèmes.
+- **`forge hazards declare` affichait la syntaxe xUnit** (`[Trait("hazard", …)]`) à un
+  auteur Python, qui aurait écrit une preuve que rien ne reconnaît. Le marqueur affiché
+  vient du profil.
+- **Le README scaffoldé imposait un bloc ` ```csharp `** quel que soit le langage.
+- **`microforge.json` embarquait le profil calculé** (`supportsContractVerification`,
+  `isVerifiedProfile`…). Ces champs sont ignorés au chargement — le profil est déduit
+  du seul `language`. Les laisser dans un fichier destiné à être édité à la main
+  laissait croire qu'y toucher changeait les garanties.
+
+- **La CI aurait lancé `dotnet test` sur un package hors .NET** et échoué sur l'absence
+  de projet, pas sur un vrai défaut. Chaque écosystème a son lanceur ; celui de Python
+  est appelé, et un écosystème sans lanceur configuré produit un **avertissement
+  explicite** plutôt qu'un silence qui ferait passer le package pour testé.
+
+### Modifié
+
+- **Correction d'une affirmation de la documentation.** Le tableau des profils annonçait
+  « tests exigés et exécutés : oui / oui ». C'est faux pour le profil de base : la forge
+  ne sait pas lancer les tests hors .NET, elle vérifie qu'ils existent. Les deux lignes
+  sont désormais distinctes.
+
+### Corrigé (suite)
 
 - **`forge init` écrivait des instructions .NET dans tous les projets.** Un dépôt
   Python recevait « utiliser `dotnet add package` », une commande qui n'y existe pas,
