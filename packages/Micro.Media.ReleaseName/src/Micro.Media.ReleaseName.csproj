@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Media.ReleaseName</PackageId>
+    <Version>1.0.1</Version>
+    <Description>Analyse le nom d'un fichier vidéo (film ou épisode de série, nom de release ou nom rangé) : titre, année, saison, numéro d'épisode, titre d'épisode, en écartant résolution, source, codecs, langues, sites et groupe.</Description>
+    <PackageTags>media;video;filename;release;episode;season;parse;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+</Project>

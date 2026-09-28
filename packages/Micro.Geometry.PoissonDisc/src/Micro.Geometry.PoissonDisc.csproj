@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Geometry.PoissonDisc</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Tire un nombre exact de points dans une ellipse ou un rectangle, deux à deux espacés d'une distance minimale (disques de Poisson), de façon déterministe pour une graine donnée : champs d'étoiles, nuages de points, placements sans chevauchement.</Description>
+    <PackageTags>geometry;sampling;poisson;random;points;layout;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>
