@@ -1,0 +1,10 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-collection",
+    "negative-value",
+    "non-finite-number",
+    "boundary-value",
+    "numeric-overflow"
+  ]
+}

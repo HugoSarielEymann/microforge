@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Markdown.WikiLink</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Analyse et réécrit les liens wiki façon Obsidian dans un texte Markdown : [[cible#section^bloc|alias]] et intégrations ![[...]], avec positions exactes, en ignorant le code.</Description>
+    <PackageTags>markdown;wikilink;link;parse;obsidian;notes;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <!-- Repérage du code : un lien écrit dans un bloc de code est un exemple, pas un renvoi. -->
+    <PackageReference Include="Micro.Markdown.CodeSpans" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Markdown.CodeSpans</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Repère les plages de code d'un texte Markdown (blocs délimités par backticks ou tildes, segments en ligne) pour que les analyseurs de liens, d'étiquettes ou de mots les ignorent.</Description>
+    <PackageTags>markdown;code;fence;backtick;span;parse;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>

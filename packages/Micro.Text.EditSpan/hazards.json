@@ -1,0 +1,10 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-input",
+    "unicode-edge",
+    "boundary-value",
+    "negative-value",
+    "numeric-overflow"
+  ]
+}

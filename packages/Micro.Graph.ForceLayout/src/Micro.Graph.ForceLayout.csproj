@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Graph.ForceLayout</PackageId>
+    <Version>1.0.1</Version>
+    <Description>Dispose les nœuds d'un graphe dans le plan par simulation de forces (ressorts sur les liens, répulsion Barnes-Hut, gravité vers le centre), pas à pas, déterministe, avec nœuds épinglables pour le glisser à la souris.</Description>
+    <PackageTags>graph;layout;force;simulation;barnes-hut;visualization;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+</Project>

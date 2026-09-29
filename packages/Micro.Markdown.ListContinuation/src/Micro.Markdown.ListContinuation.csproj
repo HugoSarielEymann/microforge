@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Markdown.ListContinuation</PackageId>
+    <Version>1.0.1</Version>
+    <Description>Calcule ce qu'un éditeur Markdown doit insérer quand on appuie sur Entrée dans une liste : même puce, numéro suivant, case à cocher vide, citation poursuivie, ou fin de liste sur une ligne vide.</Description>
+    <PackageTags>markdown;list;editor;enter;bullet;continuation;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+</Project>

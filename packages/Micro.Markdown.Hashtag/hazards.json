@@ -1,0 +1,9 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-input",
+    "unicode-edge",
+    "boundary-value",
+    "malformed-input"
+  ]
+}
