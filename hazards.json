@@ -1,0 +1,18 @@
+[
+  {
+    "id": "non-finite-number",
+    "description": "Nombre a virgule flottante non fini : NaN, \u002BInfini, -Infini.",
+    "rationale": "Un double issu d\u0027un calcul de debit ou de moyenne peut valoir NaN (division 0/0) ou Infini (division par zero). Sans traitement explicite, la valeur traverse le formatage et ressort en texte aberrant, ou fait boucler un algorithme de mise a l\u0027echelle qui compare a des seuils.",
+    "examples": [
+      "double.NaN",
+      "double.PositiveInfinity",
+      "0.0/0.0"
+    ]
+  },
+  {
+    "id": "xml-external-entity",
+    "description": "Document XML porteur d\u0027une DTD ou d\u0027entit\u00E9s externes (XXE) : lecture de fichiers locaux, requ\u00EAtes sortantes, expansion exponentielle d\u0027entit\u00E9s.",
+    "rationale": "Tout package qui lit du XML re\u00E7u de l\u0027ext\u00E9rieur (SOAP, flux, configuration) doit prouver qu\u0027il refuse les DTD et ne r\u00E9sout aucune entit\u00E9 externe.",
+    "examples": []
+  }
+]
