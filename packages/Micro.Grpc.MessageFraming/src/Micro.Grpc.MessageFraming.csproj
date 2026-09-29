@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Grpc.MessageFraming</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Lit et écrit les trames de messages gRPC sur un flux (un octet d'indicateur de compression, quatre octets de longueur big-endian, puis le message), avec taille maximale, détection des flux tronqués et annulation.</Description>
+    <PackageTags>grpc;framing;http2;stream;length-prefixed;protocol;async;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

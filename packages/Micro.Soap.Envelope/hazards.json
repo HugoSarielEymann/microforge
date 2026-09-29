@@ -1,0 +1,10 @@
+{
+  "hazards": [
+    "null-input",
+    "empty-input",
+    "malformed-input",
+    "boundary-value",
+    "unicode-edge",
+    "xml-external-entity"
+  ]
+}

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Sql.NamedParameters</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Relève les paramètres nommés (@nom, :nom, $nom) d'une requête SQL en ignorant les chaînes, identifiants délimités, commentaires, chaînes dollar PostgreSQL, variables système @@ et conversions ::, pour savoir quelles valeurs lier avant d'exécuter.</Description>
+    <PackageTags>sql;parameters;parse;query;database;named;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

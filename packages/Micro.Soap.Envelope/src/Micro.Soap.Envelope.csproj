@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Soap.Envelope</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Construit et lit des enveloppes SOAP 1.1 et 1.2 (en-têtes, corps, fautes avec code, sous-code, raison et détail), détecte la version par l'espace de noms ou le Content-Type, et refuse les DTD et entités externes à la lecture.</Description>
+    <PackageTags>soap;xml;envelope;fault;webservice;wsdl;parse;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

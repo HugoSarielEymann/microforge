@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Protobuf.DynamicCodec</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Encode et décode des messages Protobuf (proto3) sans code généré, à partir d'une description de schéma construite à l'exécution : scalaires, messages imbriqués et récursifs, champs répétés packés, énumérations, présence, fusion des occurrences multiples, bornes de profondeur.</Description>
+    <PackageTags>protobuf;grpc;serialization;encoding;dynamic;schema;binary;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
