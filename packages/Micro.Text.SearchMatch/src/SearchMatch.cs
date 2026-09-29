@@ -220,6 +220,127 @@ public static class SearchMatcher
         return true;
     }
 
+    /// <summary>Situe chaque occurrence des termes de la requête dans un texte.</summary>
+    /// <param name="query">Texte cherché ; nul, vide ou blanc ne donne aucune occurrence.</param>
+    /// <param name="text">Texte où chercher ; nul ou vide ne donne aucune occurrence.</param>
+    /// <param name="options">Réglages ; <see langword="null"/> prend les défauts.</param>
+    /// <returns>
+    /// Les occurrences, en positions du texte <em>d'origine</em>, triées par position puis de
+    /// la plus longue à la plus courte. Deux termes peuvent se chevaucher ; un même terme non.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">Si les options sont invalides.</exception>
+    /// <remarks>
+    /// <para>
+    /// Sert à surligner ce que <see cref="Matches(string?, IEnumerable{string?}, SearchMatchOptions?)"/>
+    /// a retenu : les mêmes règles de casse, d'accents et de mot entier s'appliquent, et les
+    /// positions rendues désignent le texte tel qu'il s'affiche — « resume » situe bien
+    /// « Résumé » à ses six caractères, même écrit en forme décomposée.
+    /// </para>
+    /// <para>
+    /// Le repliement se fait caractère perçu par caractère perçu, ce qui préserve la
+    /// correspondance avec le texte d'origine ; une paire de substitution ou une lettre suivie
+    /// de ses accents combinants n'est donc jamais coupée par une occurrence.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<SearchOccurrence> FindOccurrences(string? query, string? text, SearchMatchOptions? options = null)
+    {
+        SearchMatchOptions settings = options ?? SearchMatchOptions.Default;
+        settings.Validate();
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return [];
+        }
+
+        IReadOnlyList<string> terms = SplitTerms(query, settings);
+        if (terms.Count == 0)
+        {
+            return [];
+        }
+
+        (string folded, int[] starts, int[] ends) = FoldWithMap(text, settings);
+        List<SearchOccurrence> occurrences = [];
+
+        for (int termIndex = 0; termIndex < terms.Count; termIndex++)
+        {
+            string term = terms[termIndex];
+            if (term.Length == 0)
+            {
+                continue;
+            }
+
+            int position = 0;
+            while (position <= folded.Length - term.Length)
+            {
+                int found = folded.IndexOf(term, position, StringComparison.Ordinal);
+                if (found < 0)
+                {
+                    break;
+                }
+
+                int last = found + term.Length - 1;
+                bool accepted = !settings.WholeWord
+                    || ((found == 0 || !char.IsLetterOrDigit(folded[found - 1]))
+                        && (last + 1 == folded.Length || !char.IsLetterOrDigit(folded[last + 1])));
+
+                if (accepted)
+                {
+                    occurrences.Add(new SearchOccurrence(starts[found], ends[last] - starts[found], termIndex));
+                    position = found + term.Length;
+                }
+                else
+                {
+                    position = found + 1;
+                }
+            }
+        }
+
+        occurrences.Sort(static (a, b) => a.Start != b.Start ? a.Start.CompareTo(b.Start) : b.Length.CompareTo(a.Length));
+        return occurrences;
+    }
+
+    /// <summary>
+    /// Replie un texte en gardant, pour chaque caractère replié, la plage du caractère perçu
+    /// d'origine dont il provient.
+    /// </summary>
+    private static (string Folded, int[] Starts, int[] Ends) FoldWithMap(string text, SearchMatchOptions options)
+    {
+        StringBuilder builder = new(text.Length);
+        List<int> starts = new(text.Length);
+        List<int> ends = new(text.Length);
+
+        int position = 0;
+        while (position < text.Length)
+        {
+            char c = text[position];
+
+            // Voie rapide : un caractère ASCII qui n'est pas suivi d'une marque combinante se
+            // replie seul, sans normalisation.
+            if (c < 0x80 && (position + 1 == text.Length || text[position + 1] < 0x300))
+            {
+                builder.Append(options.IgnoreCase ? char.ToLowerInvariant(c) : c);
+                starts.Add(position);
+                ends.Add(position + 1);
+                position++;
+                continue;
+            }
+
+            int length = StringInfo.GetNextTextElementLength(text, position);
+            string element = Fold(text.Substring(position, length), options);
+
+            foreach (char foldedChar in element)
+            {
+                builder.Append(foldedChar);
+                starts.Add(position);
+                ends.Add(position + length);
+            }
+
+            position += length;
+        }
+
+        return (builder.ToString(), [.. starts], [.. ends]);
+    }
+
     private static bool Contains(string field, string term, SearchMatchOptions options)
         => options.WholeWord
             ? ContainsWord(field, term)

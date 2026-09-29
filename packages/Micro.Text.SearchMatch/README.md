@@ -30,10 +30,15 @@ Points d'entrée :
 | `SearchMatcher.Filter(source, query, fieldSelector, options)` | Filtre une séquence en conservant l'ordre d'origine. Exécution différée, arguments validés dès l'appel. |
 | `SearchMatcher.SplitTerms(query, options)` | Découpe et replie la requête une seule fois. |
 | `SearchMatcher.MatchesTerms(terms, fields, options)` | Confronte des termes déjà découpés — à préférer quand la même requête est confrontée à beaucoup d'enregistrements. |
+| `SearchMatcher.FindOccurrences(query, text, options)` | *(1.1.0)* Situe chaque occurrence des termes dans le texte **d'origine** (`SearchOccurrence` : `Start`, `Length`, `TermIndex`), pour surligner ce qui a été retenu. |
 
 Une requête nulle, vide ou entièrement blanche accepte tout : c'est l'état d'un champ de
 recherche que l'on vient d'effacer, et la liste doit alors réapparaître entière. À l'inverse,
 un enregistrement sans aucun champ interrogeable ne répond à aucune recherche non vide.
+
+`FindOccurrences` applique exactement les mêmes règles que `Matches` (casse, accents, mot
+entier) et rend des positions dans le texte tel qu'il s'affiche : « resume » situe « Résumé »
+sur ses six caractères, même en forme décomposée ; un émoji n'est jamais coupé.
 
 ## Paramétrage
 
@@ -81,5 +86,12 @@ foreach (Etape etape in catalogue)
     {
         // …
     }
+}
+
+// Surligner ce qui a répondu (1.1.0) : positions dans le texte d'origine.
+string titre = "Requête SQL sur la base";
+foreach (SearchOccurrence o in SearchMatcher.FindOccurrences("requete base", titre))
+{
+    string passage = titre.Substring(o.Start, o.Length);   // « Requête », puis « base »
 }
 ```

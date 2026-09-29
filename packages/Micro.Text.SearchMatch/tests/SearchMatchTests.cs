@@ -418,4 +418,116 @@ public sealed class SearchMatchTests
             Assert.True(SearchMatcher.Matches("resume client", ["Résumé", "Client final"]));
         }
     }
+
+    // ==================== Positions des occurrences (1.1.0) ====================
+
+    [Fact]
+    public void FindOccurrencesSitueChaqueTermeDansLeTexteDOrigine()
+    {
+        string texte = "Le Résumé du client, puis un autre résumé.";
+
+        IReadOnlyList<SearchOccurrence> occurrences = SearchMatcher.FindOccurrences("resume client", texte);
+
+        Assert.Equal(3, occurrences.Count);
+        Assert.Equal("Résumé", texte.Substring(occurrences[0].Start, occurrences[0].Length));
+        Assert.Equal(0, occurrences[0].TermIndex);
+        Assert.Equal("client", texte.Substring(occurrences[1].Start, occurrences[1].Length));
+        Assert.Equal(1, occurrences[1].TermIndex);
+        Assert.Equal("résumé", texte.Substring(occurrences[2].Start, occurrences[2].Length));
+        Assert.Equal(occurrences[2].Start + occurrences[2].Length, occurrences[2].End);
+    }
+
+    [Fact]
+    [Trait("hazard", "unicode-edge")]
+    public void FindOccurrencesCouvreLesAccentsCombinants()
+    {
+        // « e » suivi d'un accent aigu combinant : deux caractères, une seule lettre perçue.
+        string texte = "Resume" + "\u0301" + " final";
+
+        SearchOccurrence occurrence = Assert.Single(SearchMatcher.FindOccurrences("resumé", texte));
+
+        Assert.Equal(0, occurrence.Start);
+        Assert.Equal(7, occurrence.Length);
+    }
+
+    [Fact]
+    [Trait("hazard", "unicode-edge")]
+    public void FindOccurrencesNeCoupePasUnEmoji()
+    {
+        string texte = "Nuit 🌌 étoilée";
+
+        SearchOccurrence occurrence = Assert.Single(SearchMatcher.FindOccurrences("etoilee", texte));
+
+        Assert.Equal("étoilée", texte.Substring(occurrence.Start, occurrence.Length));
+        Assert.Single(SearchMatcher.FindOccurrences("🌌", texte));
+    }
+
+    [Fact]
+    public void FindOccurrencesRespecteLeMotEntier()
+    {
+        SearchMatchOptions options = new() { WholeWord = true };
+
+        SearchOccurrence occurrence = Assert.Single(SearchMatcher.FindOccurrences("chat", "Un achat, un chat.", options));
+
+        Assert.Equal(13, occurrence.Start);
+    }
+
+    [Fact]
+    public void FindOccurrencesRespecteLaCasseQuandOnLeDemande()
+    {
+        SearchMatchOptions options = new() { IgnoreCase = false };
+
+        Assert.Single(SearchMatcher.FindOccurrences("Plan", "plan Plan", options));
+        Assert.Equal(2, SearchMatcher.FindOccurrences("plan", "plan Plan").Count);
+    }
+
+    [Fact]
+    public void FindOccurrencesTrieParPositionPuisParLongueur()
+    {
+        IReadOnlyList<SearchOccurrence> occurrences = SearchMatcher.FindOccurrences("port portail", "portail");
+
+        Assert.Equal(2, occurrences.Count);
+        Assert.Equal(7, occurrences[0].Length);
+        Assert.Equal(4, occurrences[1].Length);
+    }
+
+    [Fact]
+    public void FindOccurrencesNeChevauchePasUnMemeTerme()
+    {
+        Assert.Equal(2, SearchMatcher.FindOccurrences("aa", "aaaa").Count);
+    }
+
+    [Fact]
+    [Trait("hazard", "empty-input")]
+    public void FindOccurrencesSansRequeteNiTexteNeRendRien()
+    {
+        Assert.Empty(SearchMatcher.FindOccurrences("", "texte"));
+        Assert.Empty(SearchMatcher.FindOccurrences("   ", "texte"));
+        Assert.Empty(SearchMatcher.FindOccurrences("a", ""));
+    }
+
+    [Fact]
+    [Trait("hazard", "null-input")]
+    public void FindOccurrencesAccepteLesNuls()
+    {
+        Assert.Empty(SearchMatcher.FindOccurrences(null, "texte"));
+        Assert.Empty(SearchMatcher.FindOccurrences("a", null));
+    }
+
+    [Fact]
+    [Trait("hazard", "boundary-value")]
+    public void FindOccurrencesValideSesReglages()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => SearchMatcher.FindOccurrences("a", "a", new SearchMatchOptions { MaximumTerms = 0 }));
+    }
+
+    [Fact]
+    [Trait("hazard", "boundary-value")]
+    public void FindOccurrencesTrouveEnDebutEtEnFinDeTexte()
+    {
+        IReadOnlyList<SearchOccurrence> occurrences = SearchMatcher.FindOccurrences("x", "x_x");
+
+        Assert.Equal(0, occurrences[0].Start);
+        Assert.Equal(2, occurrences[1].Start);
+    }
 }
