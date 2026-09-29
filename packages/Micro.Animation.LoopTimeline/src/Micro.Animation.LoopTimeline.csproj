@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Auteur, licence, symboles de débogage et attribution sont hérités de
+       packages/Directory.Build.props : ne pas les redéclarer ici. -->
+  <PropertyGroup>
+    <PackageId>Micro.Animation.LoopTimeline</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Calcule où en est une animation en boucle à un instant donné (début différé, durée, aller-retour, répétitions ou boucle infinie), pour animer à la cadence de son choix, par minuterie lente, ce qu'un storyboard animerait à 60 images par seconde.</Description>
+    <PackageTags>animation;timeline;loop;autoreverse;repeat;storyboard;frame-rate;generic</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+</Project>
